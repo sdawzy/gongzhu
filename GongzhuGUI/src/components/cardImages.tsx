@@ -62,6 +62,8 @@ const cardImages = {
 
     // back
     'back': require('../../assets/images/cards/card_back.png'), // card back
+  
+    default: require('../../assets/images/cards/card_back.png'), // card back (default)
   };
   
   export default cardImages;

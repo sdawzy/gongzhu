@@ -10,7 +10,7 @@ const generateDeck = () => {
 
   suits.forEach(suit => {
     ranks.forEach(rank => {
-      deck.push({ suit, rank, id: `${rank}_${suit}` });
+      deck.push({ suit, rank, id: `${suit}_${rank}` });
     });
   });
 
@@ -20,6 +20,7 @@ const generateDeck = () => {
 // Helper function to shuffle the deck
 const shuffleDeck = (deck) => {
   return deck.sort(() => Math.random() - 0.5);
+  // return deck;
 };
 
 // Helper function to deal cards to players
@@ -47,17 +48,31 @@ export default function GamePage() {
       {players.length === 0 ? (
         <Button title="Start Game" onPress={startGame} />
       ) : (
-        <View>
+        <View style={styles.handContainer}>
           <Text style={styles.title}>Player {currentPlayer + 1}'s Cards:</Text>
-          <FlatList
+          <FlatList horizontal={true}
             data={players[currentPlayer]}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
+            renderItem={({ item, index }) => (
               // <Text style={styles.card}>
               //   {item.rank} {item.suit}
               // </Text>
-               <Card cardName={item.suit + '_' + item.rank} /> 
+              <View style={[{ 
+                position: 'absolute', 
+                left: index * 30,
+                // bottom: 10,
+                zIndex: 1, // Ensure overlapping is in order of the cards
+                }]}>
+                {/* <Text>{index}</Text> */}
+                <Card cardName={item.id}/> 
+              </View>
+              
+              // <View style={[styles.cardWrapper, { left: index * 10 }]}>
+              //   <Card cardName={item.id} /> 
+              //   <Text>{item.id}</Text>
+              // </View>
             )}
+            contentContainerStyle={[styles.listContent, {width: 1000}]}
           />
           <Button
             title="Next Player"
@@ -70,6 +85,14 @@ export default function GamePage() {
 }
 
 const styles = StyleSheet.create({
+  handContainer: {
+    height: 250, // Match card height
+    position: 'relative', // Allow absolute positioning of cards
+    overflow: 'hidden', // Hide overflowing cards
+    width: 500,
+    // justifyContent: 'center',
+    // alignItems: 'center',
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
@@ -88,5 +111,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginVertical: 4,
     color: '#333',
+  },
+  cardWrapper: {
+    position: 'absolute', // Allow overlapping
+    zIndex: 1, // Ensure overlapping is in order of the cards
+  },
+  listContent: {
+    // alignItems: 'center',
+    height: '100%',
   },
 });
