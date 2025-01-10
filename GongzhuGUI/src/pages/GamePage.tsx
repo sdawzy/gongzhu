@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Button, StyleSheet, FlatList } from 'react-native';
 import Card from '../components/Card';
+import Hand from '../components/Hand';
 
 // Helper function to generate a deck of cards
 const generateDeck = () => {
@@ -48,22 +49,9 @@ export default function GamePage() {
       {players.length === 0 ? (
         <Button title="Start Game" onPress={startGame} />
       ) : (
-        <View style={styles.handContainer}>
+        <View>
           <Text style={styles.title}>Player {currentPlayer + 1}'s Cards:</Text>
-          <FlatList horizontal={true}
-            data={players[currentPlayer]}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item, index }) => (
-              <View style={[{ 
-                position: 'absolute', 
-                left: index * 30,
-                zIndex: 1, // Ensure overlapping is in order of the cards
-                }]}>
-                <Card cardName={item.id}/> 
-              </View>
-            )}
-            contentContainerStyle={[styles.listContent, {width: 1000}]}
-          />
+          <Hand hand={players[currentPlayer]}/>
           <Button
             title="Next Player"
             onPress={() => setCurrentPlayer((currentPlayer + 1) % 4)}
@@ -85,7 +73,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     alignItems: 'center',
     padding: 16,
     backgroundColor: '#f0f8ff',
