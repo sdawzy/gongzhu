@@ -1,8 +1,9 @@
 import random
 
 # Define suits and ranks for the deck
-SUITS = ['♠', '♥', '♦', '♣']
-RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+SUITS = ['spade', 'heart', 'diamond', 'club']
+# RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+RANKS = ['02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14']
 
 # Helper function to generate a deck of cards
 def generate_deck():

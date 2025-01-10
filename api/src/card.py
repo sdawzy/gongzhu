@@ -1,9 +1,9 @@
 # Classes related to cards
 import random
 
-SUITS = ["Club", "Diamond", "Heart", "Spade"]
-RANKS = ["2", "3", "4", "5", "6", "7", "8", "9",
-            "10", "Jack", "Queen", "King", "Ace"]
+SUITS = ["club", "diamond", "heart", "spade"]
+RANKS = ["02", "03", "04", "05", "06", "07", "08", "09",
+            "10", "11", "12", "13", "14"]
 
 class Card:
 
@@ -16,7 +16,7 @@ class Card:
         self.suit = suit
 
     def __str__(self):
-        return f"{self.rank} of {self.suit}"
+        return f"{self.suit}_{self.rank}"
 
     def __eq__(self, other):
         if not isinstance(other, Card):

@@ -54,23 +54,13 @@ export default function GamePage() {
             data={players[currentPlayer]}
             keyExtractor={(item) => item.id}
             renderItem={({ item, index }) => (
-              // <Text style={styles.card}>
-              //   {item.rank} {item.suit}
-              // </Text>
               <View style={[{ 
                 position: 'absolute', 
                 left: index * 30,
-                // bottom: 10,
                 zIndex: 1, // Ensure overlapping is in order of the cards
                 }]}>
-                {/* <Text>{index}</Text> */}
                 <Card cardName={item.id}/> 
               </View>
-              
-              // <View style={[styles.cardWrapper, { left: index * 10 }]}>
-              //   <Card cardName={item.id} /> 
-              //   <Text>{item.id}</Text>
-              // </View>
             )}
             contentContainerStyle={[styles.listContent, {width: 1000}]}
           />
