@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
-export default function RulesPage() {
+const RulesPage : React.FC = () => {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Card Game Rules</Text>
@@ -71,3 +71,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+
+export default RulesPage;

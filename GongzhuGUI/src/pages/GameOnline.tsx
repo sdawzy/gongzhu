@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, StyleSheet, FlatList } from 'react-native';
 import axios from 'axios';
+import Card from '../components/Card';
 
-export default function GameOnline() {
+const GameOnline: React.FC = () => {
   const [players, setPlayers] = useState([]);
   const [currentPlayer, setCurrentPlayer] = useState(0); // Track the current player
   const URL = 'http://localhost:1926';
@@ -51,9 +52,11 @@ export default function GameOnline() {
             data={players}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <Text style={styles.card}>
-                {item.rank} {item.suit}
-              </Text>
+              // <Text style={styles.card}>
+              //   {item.rank} {item.suit}
+              // </Text>
+              //   // <Card cardName={item.rank + '_' + item.suit} /> 
+                <Card cardName={item.suit + '_' + item.rank} /> 
             )}
           />
           <Button title="Next Player" onPress={nextPlayer} />
@@ -84,3 +87,5 @@ const styles = StyleSheet.create({
     color: '#333',
   },
 });
+
+export default GameOnline;

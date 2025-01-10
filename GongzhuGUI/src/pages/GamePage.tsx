@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { View, Text, Button, StyleSheet, FlatList } from 'react-native';
+import Card from '../components/Card';
 
 // Helper function to generate a deck of cards
 const generateDeck = () => {
-  const suits = ['♠', '♥', '♦', '♣'];
-  const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+  const suits = ['spade', 'heart', 'diamond', 'club'];
+  const ranks = ['02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14'];
   let deck = [];
 
   suits.forEach(suit => {
     ranks.forEach(rank => {
-      deck.push({ suit, rank, id: `${rank}${suit}` });
+      deck.push({ suit, rank, id: `${rank}_${suit}` });
     });
   });
 
@@ -52,9 +53,10 @@ export default function GamePage() {
             data={players[currentPlayer]}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <Text style={styles.card}>
-                {item.rank} {item.suit}
-              </Text>
+              // <Text style={styles.card}>
+              //   {item.rank} {item.suit}
+              // </Text>
+               <Card cardName={item.suit + '_' + item.rank} /> 
             )}
           />
           <Button
