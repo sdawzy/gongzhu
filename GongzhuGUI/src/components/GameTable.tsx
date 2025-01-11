@@ -3,22 +3,22 @@ import { View, Text, Button, StyleSheet, Image, ImageSourcePropType } from 'reac
 import Card from '../components/Card';
 import Hand from '../components/Hand';
 import { CardInterface } from '../types';
+import { PlayerInterface } from '../types';
 
-interface Player {
-    name: string;
-    avatar: ImageSourcePropType;
-}
+// interface Player {
+//     name: string;
+//     avatar: ImageSourcePropType;
+// }
 
 interface GameTableProps {
-    hands: CardInterface[][]; // Array of arrays of cards for each player
-    players: Player[]; // Array of arrays of cards for each player
+    players: PlayerInterface[]; // Array of arrays of cards for each player
 }
-const GameTable: React.FC<GameTableProps> = ({ hands, players }) => {
+const GameTable: React.FC<GameTableProps> = ({ players }) => {
   return (
     (<View style={styles.tableContainer}>
         {/* Top Player */}
         <View style={[styles.playerContainer, styles.topPlayer]}>
-            <Hand hand={hands[2]} rotation={0} visible={false}/>
+            <Hand hand={players[2].hand} rotation={0} visible={false}/>
             <View style={[styles.avatarNameContainer, {transform: [{ rotate: '180deg' }]}]}>
                 <Image source={players[2].avatar} style={styles.avatar} />
                 <Text style={styles.playerName}>{players[2].name}</Text>
@@ -28,17 +28,17 @@ const GameTable: React.FC<GameTableProps> = ({ hands, players }) => {
         <View style={[styles.playerContainer, styles.leftPlayer]}>
             <Image source={players[3].avatar} style={styles.avatar} />
             <Text style={styles.playerName}>{players[3].name}</Text>
-            <Hand hand={hands[3]} rotation={0} visible={false}/>
+            <Hand hand={players[3].hand} rotation={0} visible={false}/>
         </View>
         {/* Right Player */}
         <View style={[styles.playerContainer, styles.rightPlayer]}>
             <Image source={players[1].avatar} style={styles.avatar} />
             <Text style={styles.playerName}>{players[1].name}</Text>
-            <Hand hand={hands[1]} rotation={0} visible={false}/>
+            <Hand hand={players[1].hand} rotation={0} visible={false}/>
         </View>
         {/* Bottom Player */}
         <View style={[styles.playerContainer, styles.bottomPlayer]}>
-            <Hand hand={hands[0]} rotation={0} visible={true}/>
+            <Hand hand={players[0].hand} rotation={0} visible={true}/>
             <View style={styles.avatarNameContainer}>
                 <Image source={players[0].avatar} style={styles.avatar} />
                 <Text style={styles.playerName}>{players[0].name}</Text>

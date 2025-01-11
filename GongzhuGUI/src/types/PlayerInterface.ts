@@ -1,17 +1,18 @@
 import { CardInterface } from "./CardInterface";
+import { ImageSourcePropType } from 'react-native';
 
 export interface PlayerInterface {
-    id: string;
-    name: string;
+    id?: string;
+    name?: string;
+    avatar?: ImageSourcePropType;
 
     hand: CardInterface[];
-
-    closeDeclared: CardInterface[];
-    openDeclared: CardInterface[];
     collected: CardInterface[];
 
     playedCards: CardInterface[];
     currentPlayedCard: CardInterface | null;
 
-    score: number;
+    score?: number;
+    closeDeclaredCards?: CardInterface[] | null;
+    openDeclaredCards?: CardInterface[] | null;
 }

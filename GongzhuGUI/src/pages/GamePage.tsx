@@ -4,6 +4,7 @@ import Card from '../components/Card';
 import Hand from '../components/Hand';
 import { CardInterface } from '../types';
 import GameTable from '../components/GameTable';
+import { PlayerInterface } from '../types';
 // Helper function to generate a deck of cards
 const generateDeck = () => {
   const suits = ['spade', 'heart', 'diamond', 'club'];
@@ -27,26 +28,25 @@ const shuffleDeck = (deck) => {
 
 // Helper function to deal cards to players
 const dealCards = (deck) => {
-  const players = [[], [], [], []];
+  const hands = [[], [], [], []];
   deck.forEach((card, index) => {
-    players[index % 4].push(card);
+    hands[index % 4].push(card);
   });
   // Sort hands
   for (let i = 0; i < 4; i++) {
-    players[i].sort((a, b) => a.id < b.id? -1 : 1);  
+    hands[i].sort((a, b) => a.id < b.id? -1 : 1);  
   }
-  return players;
+  return hands;
 };
 
 export default function GamePage() {
-  const [players, setPlayers] = useState([]);
+  const [hands, setHands] = useState([]);
   const [currentPlayer, setCurrentPlayer] = useState(0); // Track the current player
 
   const startGame = () => {
     const deck = shuffleDeck(generateDeck());
     const dealtPlayers = dealCards(deck);
-    setPlayers(dealtPlayers);
-    setCurrentPlayer(0);
+    setHands(dealtPlayers);
   };
 
   const playerInfo = [
@@ -55,6 +55,16 @@ export default function GamePage() {
     { name: 'Mr. Penguin', avatar: require('../../assets/images/avatars/Penguin.png') },
     { name: 'Mrs. Elephant', avatar: require('../../assets/images/avatars/Elephant.png') },
   ]
+
+  const players : PlayerInterface[] = hands.map((hand, index) => ({
+      name: playerInfo[index].name,
+      avatar: playerInfo[index].avatar,
+      hand: hand,
+      collected: [],
+      playedCards: [],
+      currentPlayedCard: null,
+      score: 0,
+    }));
 
   return (
     <View style={styles.container}>
@@ -68,7 +78,7 @@ export default function GamePage() {
             <Button title="Start Game" onPress={startGame} />
         </View>
       ) : (
-        <GameTable hands={players} players={playerInfo}/>
+        <GameTable players={players}/>
       )}
     </View>
   );
