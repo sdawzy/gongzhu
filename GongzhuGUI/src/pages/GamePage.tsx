@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, Button, StyleSheet, FlatList } from 'react-native';
+import { View, Text, Button, StyleSheet, Image } from 'react-native';
 import Card from '../components/Card';
 import Hand from '../components/Hand';
-
+import { CardInterface } from '../types';
+import GameTable from '../components/GameTable';
 // Helper function to generate a deck of cards
 const generateDeck = () => {
   const suits = ['spade', 'heart', 'diamond', 'club'];
@@ -30,6 +31,10 @@ const dealCards = (deck) => {
   deck.forEach((card, index) => {
     players[index % 4].push(card);
   });
+  // Sort hands
+  for (let i = 0; i < 4; i++) {
+    players[i].sort((a, b) => a.id < b.id? -1 : 1);  
+  }
   return players;
 };
 
@@ -44,32 +49,41 @@ export default function GamePage() {
     setCurrentPlayer(0);
   };
 
+  const playerInfo = [
+    { name: 'You', avatar: require('../../assets/images/avatars/You.png') },
+    { name: 'Mr. Panda', avatar: require('../../assets/images/avatars/Panda.png') },
+    { name: 'Mr. Penguin', avatar: require('../../assets/images/avatars/Penguin.png') },
+    { name: 'Mrs. Elephant', avatar: require('../../assets/images/avatars/Elephant.png') },
+  ]
+
   return (
     <View style={styles.container}>
       {players.length === 0 ? (
-        <Button title="Start Game" onPress={startGame} />
-      ) : (
-        <View>
-          <Text style={styles.title}>Player {currentPlayer + 1}'s Cards:</Text>
-          <Hand hand={players[currentPlayer]}/>
-          <Button
-            title="Next Player"
-            onPress={() => setCurrentPlayer((currentPlayer + 1) % 4)}
-          />
+        <View>        
+            <Hand 
+              hand={generateDeck()} 
+              rotation={0}
+              visible={false}
+            />
+            <Button title="Start Game" onPress={startGame} />
         </View>
+      ) : (
+        <GameTable hands={players} players={playerInfo}/>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  handContainer: {
-    height: 250, // Match card height
-    position: 'relative', // Allow absolute positioning of cards
-    overflow: 'hidden', // Hide overflowing cards
-    width: 500,
-    // justifyContent: 'center',
-    // alignItems: 'center',
+  tableContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#008000', // Green table background like a card table
+  },
+  playerContainer: {
+    position: 'absolute',
+    alignItems: 'center',
   },
   container: {
     flex: 1,
@@ -97,5 +111,24 @@ const styles = StyleSheet.create({
   listContent: {
     // alignItems: 'center',
     height: '100%',
+  },
+  topHand: {
+    top: 20,
+    alignItems: 'center',
+    transform: [{ rotate: '180deg' }],
+  },
+  bottomHand: {
+    bottom: 20,
+    alignItems: 'center',
+  },
+  leftHand: {
+    left: 20,
+    justifyContent: 'center',
+    transform: [{ rotate: '-90deg' }],
+  },
+  rightHand: {
+    right: 20,
+    justifyContent: 'center',
+    transform: [{ rotate: '90deg' }],
   },
 });
