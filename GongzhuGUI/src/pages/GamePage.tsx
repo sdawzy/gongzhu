@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, Button, StyleSheet, Image } from 'react-native';
 import Card from '../components/Card';
 import Hand from '../components/Hand';
-import { CardInterface } from '../types';
+import { CardInterface, PlayerInterface, CloseDeclaredCard } from '../types';
 import GameTable from '../components/GameTable';
-import { PlayerInterface } from '../types';
+// import {  } from '../types';
 // Helper function to generate a deck of cards
 const generateDeck = () => {
   const suits = ['spade', 'heart', 'diamond', 'club'];
@@ -42,6 +42,7 @@ const dealCards = (deck) => {
 export default function GamePage() {
   const [hands, setHands] = useState([]);
   const [currentPlayer, setCurrentPlayer] = useState(0); // Track the current player
+  // setCurrentPlayer(1);
 
   const startGame = () => {
     const deck = shuffleDeck(generateDeck());
@@ -56,14 +57,51 @@ export default function GamePage() {
     { name: 'Mrs. Elephant', avatar: require('../../assets/images/avatars/Elephant.png') },
   ]
 
+  const collectedCards : CardInterface[][] = [
+    [{suit : 'spade', rank : "02", id : 'spade_02'}, {suit : 'club', rank : "10", id : 'club_02'}], // Player 1
+    [{suit : 'heart', rank : "02", id : 'heart_02'}], // Player 2
+    [{suit : 'diamond', rank : "02", id : 'diamond_02'}], // Player 3
+    [], // Player 4
+  ]
+
+  const openDeclaredCards : CardInterface[][] = [
+    [{suit : 'heart', rank : "02", id : 'heart_02'}], // Player 1
+    [{suit : 'club', rank : "10", id : 'club_10'}], // Player 2
+    [{suit : 'diamond', rank : "02", id : 'diamond_02'}], // Player 3
+    [{suit : 'club', rank : "02", id : 'club_02'}], // Player 4
+  ]
+
+  const closeDeclaredCards : CloseDeclaredCard[][] = [
+    [{card: {suit : 'heart', rank : "02", id : 'heart_02'}, visible: false}], // Player 1
+    [{card: {suit : 'club', rank : "10", id : 'club_10'}, visible: false}], // Player 2
+    [{card: {suit : 'diamond', rank : "02", id : 'diamond_02'}, visible: true}], // Player 3
+    [{card: {suit : 'club', rank : "02", id : 'club_02'}, visible: true}], // Player 4
+  ]
+
+  const currentPlayedCards : (CardInterface | null) [] = [
+    {suit : 'diamond', rank : "14", id : 'diamond_14'}, // Player 1
+    {suit : 'diamond', rank : "06", id : 'diamond_06'}, // Player 2
+    {suit : 'diamond', rank : "11", id : 'diamond_11'}, // Player 3
+    {suit : 'diamond', rank : "12", id : 'diamond_12'}, // Player 4
+  ]
+  
+  const scores : number[] = [100, -20, 30, 60];
+
   const players : PlayerInterface[] = hands.map((hand, index) => ({
       name: playerInfo[index].name,
       avatar: playerInfo[index].avatar,
       hand: hand,
-      collected: [],
+      collectedCards: [],
       playedCards: [],
       currentPlayedCard: null,
-      score: 0,
+      // collectedCards: collectedCards[index],
+      // playedCards: collectedCards[3-index],
+
+      // openDeclaredCards: openDeclaredCards[index],
+      // closeDeclaredCards: closeDeclaredCards[index],
+
+      // currentPlayedCard: currentPlayedCards[index],
+      // score: scores[index],
     }));
 
   return (
@@ -78,7 +116,11 @@ export default function GamePage() {
             <Button title="Start Game" onPress={startGame} />
         </View>
       ) : (
-        <GameTable players={players}/>
+        <GameTable 
+          initialPlayers={players} 
+          setCurrentPlayerIndex={setCurrentPlayer}
+          currentPlayerIndex={currentPlayer}
+        />
       )}
     </View>
   );

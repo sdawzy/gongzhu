@@ -31,7 +31,7 @@ const Card : React.FC< {
 
 const styles = StyleSheet.create({
   cardContainer: {
-    margin: 5,
+    margin: 0,
   },
   cardImage: {
     width: 100,  // Adjust the size of the cards

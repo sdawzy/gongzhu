@@ -7,7 +7,9 @@ const Hand: React.FC< {
     hand: CardInterface[], // List of cards in the hand
     rotation?: number,  // Optional rotation angle
     visible?: boolean,  // Optional visibility state
-  }> = ({ hand, rotation, visible }) => {
+    selectedCard?: CardInterface | null,  // Optional selected card ID
+    setSelectedCard?: Function,  // Optional callback function to update selected card state
+  }> = ({ hand, rotation, visible, selectedCard, setSelectedCard }) => {
     if (rotation === undefined) { 
       rotation = 0;  // Default rotation is 0 degrees if not provided
     }
@@ -16,10 +18,13 @@ const Hand: React.FC< {
     }
 
     const cardBack = require('../../assets/images/cards/card_back.png');
-    const [selectedCard, setSelectedCard] = useState<string | null>(null);
+    if (selectedCard === undefined) { 
+      // console.warn('No selectedCard provided, using first card in hand');
+      [selectedCard, setSelectedCard] = useState<CardInterface | null>(null);
+    }
     const numberOfCards = hand.length;
     const handleCardPress = (card: CardInterface) => {
-        setSelectedCard(card.id);
+        setSelectedCard(card);
     };
 
     if (visible === true) {
@@ -31,7 +36,7 @@ const Hand: React.FC< {
               renderItem={({ item, index }) => (
                   <TouchableOpacity onPress={() => handleCardPress(item)}>
                       <View style={[styles.cardWrapper, 
-                      selectedCard === item.id && styles.selectedCardWrapper,
+                      selectedCard == item && styles.selectedCardWrapper,
                       {left: index * 30,}]}>
                           <Card 
                               card={item}
@@ -53,7 +58,6 @@ const Hand: React.FC< {
               keyExtractor={(item) => item.id}
               renderItem={({ item, index }) => (
                   <View style={[styles.cardWrapper, 
-                  selectedCard === item.id && styles.selectedCardWrapper,
                   {left: index * 30,}]}>
                       <Card 
                           card={item}
@@ -98,9 +102,9 @@ const styles = StyleSheet.create({
       paddingBottom: 10, // Adds spacing from the bottom
     },
     selectedCardWrapper: {
-        borderWidth: 2,
+        borderWidth: 5,
         borderColor: '#FFD700', // Highlight color (gold in this case)
-        borderRadius: 2,
+        borderRadius: -5,
         zIndex: 2, // Ensure selected card is above other cards
         transform: [{ translateY: -160 }],
     },
