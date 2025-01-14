@@ -211,7 +211,10 @@ class GongzhuGame:
         # Policy for AI players
         self.ai_policy = ai_policy(self.env)
         self.playedCardsThisRound : List[Card] = [] # List of cards played this round
-    
+
+        # Game history information
+        self.history = []
+
     def get_round_count(self):
         return self.round_count
 
@@ -251,6 +254,9 @@ class GongzhuGame:
         self.first_player_index = self.env.who_goes_first_initial(self.players)
         self.current_player_index = self.first_player_index
         
+        # Initialize the game history
+        self.history = []
+
         return self.to_dict()
     
     def start_game(self):
@@ -272,13 +278,15 @@ class GongzhuGame:
         return len(self.playedCardsThisRound) >= 4
 
     def end_episode(self):
-            
+        
         return self.to_dict()
+
 
     # Check if a move is legal for this round
     def is_legal_move(self, player : Player, card : Card) -> bool:
         legal_moves = self.env.legal_moves(player.get_hand(), self.playedCardsThisRound)
         return legal_moves.contains(card)
+
 
     def next_round(self):
         # Increase the round count by 1
@@ -301,6 +309,11 @@ class GongzhuGame:
             self.first_player_index = largest_index
             self.current_player_index = largest_index
         
+        self.history.append({
+            "round": self.round_count,
+            "largestIndex": largest_index,
+        })
+
         return {
             "largestIndex": largest_index,
             "newRoundCount": self.round_count,
@@ -315,7 +328,13 @@ class GongzhuGame:
         self.players[self.current_player_index].play_specific_card(move)
         # Update the current player index
         self.current_player_index = (self.current_player_index + 1) % len(self.players)
-        # return self.players[self.current_player_index]
+        # Update the game history
+        self.history.append({
+            "round": self.round_count,
+            "playerIndex": old_player_index,
+            "move": move.to_dict(),
+        })
+        
         return {
             "currentPlayerIndex": old_player_index,
             "move": move.to_dict(),
@@ -328,7 +347,12 @@ class GongzhuGame:
             self.players[self.current_player_index].play_specific_card(card)
             # Update the current player index
             self.current_player_index = (self.current_player_index + 1) % len(self.players)
-            # return self.players[self.current_player_index]
+            # Update the game history
+            self.history.append({
+                "round": self.round_count,
+                "playerIndex": 0,
+                "move": card.to_dict(),
+            })
             return self.to_dict()   
         else:
             return None
