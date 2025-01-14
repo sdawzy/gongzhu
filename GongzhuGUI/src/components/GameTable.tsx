@@ -245,6 +245,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
                 ] }]}>
             <Image source={players[2].avatar} style={styles.avatar} />
             <Text style={styles.playerName}>{players[2].name}</Text>
+            <Text style={styles.playerName}>Score : {players[2].score}</Text>
             <Button
                 title={bottonTitle}
                 onPress={() => handleShowCollectedCards(players[2])}
@@ -263,6 +264,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
             currentPlayerIndex===3 && styles.currentPlayerWrapper]}>
                 <Image source={players[3].avatar} style={styles.avatar} />
                 <Text style={styles.playerName}>{players[3].name}</Text>
+                <Text style={styles.playerName}>Score : {players[3].score}</Text>
             </View>
             <Button
             title={bottonTitle}
@@ -282,6 +284,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
             currentPlayerIndex===1 && styles.currentPlayerWrapper]}>
                 <Image source={players[1].avatar} style={styles.avatar} />
                 <Text style={styles.playerName}>{players[1].name}</Text>
+                <Text style={styles.playerName}>Score : {players[1].score}</Text>
             </View>
             <Button
             title={bottonTitle}
@@ -304,6 +307,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
                 currentPlayerIndex===0 && styles.currentPlayerWrapper,]} >
             <Image source={players[0].avatar} style={styles.avatar} />
             <Text style={styles.playerName}>{players[0].name}</Text>
+            <Text style={styles.playerName}>Score : {players[0].score}</Text>
             <Button
                 title={bottonTitle}
                 onPress={() => handleShowCollectedCards(players[0])}
