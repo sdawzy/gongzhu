@@ -10,6 +10,14 @@ interface GameTableProps {
   online: boolean; // Whether the game is being played online or not
 }
 
+
+const defaultAvatars = [
+    require('../../assets/images/avatars/You.png'),
+    require('../../assets/images/avatars/Panda.png'),
+    require('../../assets/images/avatars/Penguin.png'),
+    require('../../assets/images/avatars/Elephant.png')
+]
+
 const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
     const [players, setPlayers] = useState<PlayerInterface[]>(online ? [] : initialPlayers);  
     const [selectedPlayer, setSelectedPlayer] = useState<PlayerInterface | null>(null);
@@ -133,7 +141,6 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
 
     const endOneRound = () => {
         // Figure out the largest of this round based on the played cards
-        // TODO: Implement Online version of this function
         if (online) {
             axios.get(URL + '/next_round').then((response) => {
                 const data = response.data;
@@ -243,7 +250,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
             <View style={[styles.avatarNameContainer, 
             currentPlayerIndex===2 && styles.currentPlayerWrapper, { transform: [{ rotate: '180deg' }, 
                 ] }]}>
-            <Image source={players[2].avatar} style={styles.avatar} />
+            <Image source={players[2].avatar ? players[2].avatar : defaultAvatars[2]} style={styles.avatar} />
             <Text style={styles.playerName}>{players[2].name}</Text>
             <Text style={styles.playerName}>Score : {players[2].score}</Text>
             <Button
@@ -262,7 +269,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
         <View style={[styles.playerContainer, styles.leftPlayer]}>
             <View style={[styles.avatarNameContainer,
             currentPlayerIndex===3 && styles.currentPlayerWrapper]}>
-                <Image source={players[3].avatar} style={styles.avatar} />
+                <Image source={players[3].avatar ? players[3].avatar : defaultAvatars[3]} style={styles.avatar} />
                 <Text style={styles.playerName}>{players[3].name}</Text>
                 <Text style={styles.playerName}>Score : {players[3].score}</Text>
             </View>
@@ -282,7 +289,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
         <View style={[styles.playerContainer, styles.rightPlayer]}>
             <View style={[styles.avatarNameContainer, 
             currentPlayerIndex===1 && styles.currentPlayerWrapper]}>
-                <Image source={players[1].avatar} style={styles.avatar} />
+                <Image source={players[1].avatar ? players[1].avatar : defaultAvatars[1]} style={styles.avatar} />
                 <Text style={styles.playerName}>{players[1].name}</Text>
                 <Text style={styles.playerName}>Score : {players[1].score}</Text>
             </View>
@@ -305,7 +312,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
                 selectedCard={selectedCard} setSelectedCard={setSelectedCard}/>
             <View style={[styles.avatarNameContainer, 
                 currentPlayerIndex===0 && styles.currentPlayerWrapper,]} >
-            <Image source={players[0].avatar} style={styles.avatar} />
+            <Image source={players[0].avatar ? players[0].avatar : defaultAvatars[0]} style={styles.avatar} />
             <Text style={styles.playerName}>{players[0].name}</Text>
             <Text style={styles.playerName}>Score : {players[0].score}</Text>
             <Button

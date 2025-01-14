@@ -12,7 +12,7 @@ export default function IndexPage({ navigation }) {
       </View>
       <View style={styles.buttonContainer}>
         <Button
-          title="New Online Game (for testing the API)"
+          title="New Online Game (for testing API)"
           onPress={() => navigation.navigate('GameOnline')}
         />
       </View>
