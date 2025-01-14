@@ -2,13 +2,23 @@
 A repo for card game Gongzhu and its algorithms
 
 ## Usage
-For playing a game, go to the /src directory and run the following command
+First, you need to start the server of the api with the following commands
+```
+cd api/
+python3 app.py
+```
 
-`python3 main.py`
+Then in a separate terminal, start the development server of the GUI with the following commands
 
-For emulation, run this command instead
+```
+cd gongzhuGUI/
+npm install
+npx expo start
+```
 
-`python3 main.py --mode emulate`
+And run the following command to run on web
+
+`npx expo start --web`
 
 ## Image resources
 
