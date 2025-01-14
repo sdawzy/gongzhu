@@ -2,13 +2,9 @@ export interface CardInterface {
     suit: string;
     rank: string;
     id? : string;
+    known?: boolean;
 }
 
 export interface HandInterface {
     cards: CardInterface[];
-}
-
-export interface closeDeclaredCard {
-    card: CardInterface;
-    visible?: boolean;
 }

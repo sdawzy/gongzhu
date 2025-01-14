@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Button, StyleSheet, Image } from 'react-native';
 import Card from '../components/Card';
 import Hand from '../components/Hand';
-import { CardInterface, PlayerInterface, CloseDeclaredCard } from '../types';
+import { CardInterface, PlayerInterface } from '../types';
 import GameTable from '../components/GameTable';
 // import {  } from '../types';
 // Helper function to generate a deck of cards
@@ -39,7 +39,7 @@ const dealCards = (deck) => {
   return hands;
 };
 
-export default function GamePage() {
+const GamePage : React.FC = () => {
   const [hands, setHands] = useState([]);
   const [currentPlayer, setCurrentPlayer] = useState(0); // Track the current player
   // setCurrentPlayer(1);
@@ -71,12 +71,6 @@ export default function GamePage() {
     [{suit : 'club', rank : "02", id : 'club_02'}], // Player 4
   ]
 
-  const closeDeclaredCards : CloseDeclaredCard[][] = [
-    [{card: {suit : 'heart', rank : "02", id : 'heart_02'}, visible: false}], // Player 1
-    [{card: {suit : 'club', rank : "10", id : 'club_10'}, visible: false}], // Player 2
-    [{card: {suit : 'diamond', rank : "02", id : 'diamond_02'}, visible: true}], // Player 3
-    [{card: {suit : 'club', rank : "02", id : 'club_02'}, visible: true}], // Player 4
-  ]
 
   const currentPlayedCards : (CardInterface | null) [] = [
     {suit : 'diamond', rank : "14", id : 'diamond_14'}, // Player 1
@@ -94,14 +88,6 @@ export default function GamePage() {
       collectedCards: [],
       playedCards: [],
       currentPlayedCard: null,
-      // collectedCards: collectedCards[index],
-      // playedCards: collectedCards[3-index],
-
-      // openDeclaredCards: openDeclaredCards[index],
-      // closeDeclaredCards: closeDeclaredCards[index],
-
-      // currentPlayedCard: currentPlayedCards[index],
-      // score: scores[index],
     }));
 
   return (
@@ -118,8 +104,7 @@ export default function GamePage() {
       ) : (
         <GameTable 
           initialPlayers={players} 
-          setCurrentPlayerIndex={setCurrentPlayer}
-          currentPlayerIndex={currentPlayer}
+          online={false}
         />
       )}
     </View>
@@ -184,3 +169,5 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '90deg' }],
   },
 });
+
+export default GamePage;

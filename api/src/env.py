@@ -1,21 +1,17 @@
-from card import Hand, Card, CardCollection
-# from player import Player
-from typing import List
+from .card import Hand, Card, CardCollection, Deck
+from .player import Player
+from typing import List, TYPE_CHECKING
+from .policies import Policy, RandomPolicy
 
+# Game environment class to manage game rules and state.
 class Env:
     # Class-level variables for round count and number of players
-    round_count = 0
-    num_players = 0
 
     def __init__(self):
+        # Initialize round count and number of players
+        self.num_players = 0
         # Initialize allPlayedCards as a CardCollection instance
         self.all_played_cards = CardCollection()
-
-    def get_round_count(self):
-        return Env.round_count
-
-    def inc_round_count(self):
-        Env.round_count += 1
 
     def get_all_played_cards(self):
         return self.all_played_cards
@@ -55,34 +51,44 @@ class BloodCard:
 
 class Gongzhu(Env):
     # Define 4 important cards
-    PIG = Card("Queen", "Spade")
-    SHEEP = Card("Jack", "Diamond")
-    DOUBLER = Card("10", "Club")
-    BLOOD = Card("Ace", "Heart")
+    PIG = Card("12", "spade")
+    SHEEP = Card("11", "diamond")
+    DOUBLER = Card("10", "club")
+    BLOOD = Card("14", "heart")
 
     # Define blood cards with their scores
     BLOOD_CARDS = [
-        BloodCard("2", 0),
-        BloodCard("3", 0),
-        BloodCard("4", 0),
-        BloodCard("5", 10),
-        BloodCard("6", 10),
-        BloodCard("7", 10),
-        BloodCard("8", 10),
-        BloodCard("9", 10),
+        BloodCard("02", 0),
+        BloodCard("03", 0),
+        BloodCard("04", 0),
+        BloodCard("05", 10),
+        BloodCard("06", 10),
+        BloodCard("07", 10),
+        BloodCard("08", 10),
+        BloodCard("09", 10),
         BloodCard("10", 10),
-        BloodCard("Jack", 20),
-        BloodCard("Queen", 30),
-        BloodCard("King", 40),
-        BloodCard("Ace", 50),
+        BloodCard("11", 20),
+        BloodCard("12", 30),
+        BloodCard("13", 40),
+        BloodCard("14", 50),
     ]
 
     # Define the first card
-    FIRST_CARD = Card("2", "Spade")
+    FIRST_CARD = Card("02", "spade")
 
     def __init__(self):
         super().__init__()
+        self.max_round = 13
         self.set_num_players(4)
+        # Initialize players
+        # self.players = [
+        #     Player(id="You", name="You", avatar_url="avatar_url1"),
+        #     Player(id="Panda", name="Panda", avatar_url="avatar_url2"),
+        #     Player(id="Penguin", name="Penguin", avatar_url="avatar_url3"),
+        #     Player(id="Elephant", name="Elephant", avatar_url="avatar_url4"),
+        # ]
+        
+        # Initialize the effects of each special card
         self.pig_effect = 1.0
         self.sheep_effect = 1.0
         self.doubler_effect = 1.0
@@ -109,7 +115,7 @@ class Gongzhu(Env):
         # Score of blood
         blood_score_total = 0
         for blood_card in Gongzhu.BLOOD_CARDS:
-            card = Card(blood_card.get_rank(), "Heart")
+            card = Card(blood_card.get_rank(), "heart")
             if collected_cards.contains(card):
                 blood_score_total += blood_card.get_score()
                 no_blood = False
@@ -138,38 +144,47 @@ class Gongzhu(Env):
 
         return score
 
-    def legal_moves(self, hand : Hand, played_cards : List[Card]):
+    def legal_moves(self, hand : Hand, played_cards : List[Card]) -> CardCollection:
         if len(played_cards) == 0:
             return hand
 
         legal_moves = hand.get_cards_by_suit(played_cards[0].get_suit())
         return legal_moves if not legal_moves.is_empty() else hand
 
-    def apply_effect(self, player, target_card : Card, 
-                    suit, effect, card_name):
-        if player.get_hand().contains(target_card):
-            cards_by_suit = player.get_hand().get_cards_by_suit(suit)
-            suit_count = cards_by_suit.size()
+    # def apply_effect(self, player : Player, target_card : Card, 
+    #                 suit, effect, card_name):
+    #     if player.get_hand().contains(target_card):
+    #         cards_by_suit = player.get_hand().get_cards_by_suit(suit)
+    #         suit_count = cards_by_suit.size()
 
-            if suit_count == 4:
-                effect = 2.0
-                print(f"{player.get_name()} secretly declared something.\n")
-            if suit_count >= 5:
-                effect = 4.0
-                print(f"{player.get_name()} openly declared the {card_name}.\n")
+    #         if suit_count == 4:
+    #             effect = 2.0
+    #             print(f"{player.get_name()} secretly declared something.\n")
+    #         if suit_count >= 5:
+    #             effect = 4.0
+    #             print(f"{player.get_name()} openly declared the {card_name}.\n")
 
-        return effect
+    #     return effect
 
-    def declaration(self, player):
-        self.pig_effect = self.apply_effect(player, Gongzhu.PIG, "Spade", self.pig_effect, "Pig")
-        self.sheep_effect = self.apply_effect(player, Gongzhu.SHEEP, "Diamond", self.sheep_effect, "Sheep")
-        self.doubler_effect = self.apply_effect(player, Gongzhu.DOUBLER, "Club", self.doubler_effect, "Doubler")
-        self.blood_effect = self.apply_effect(player, Gongzhu.BLOOD, "Heart", self.blood_effect, "Blood")
+    # def declaration(self, player):
+    #     self.pig_effect = self.apply_effect(player, Gongzhu.PIG, "spade", self.pig_effect, "Pig")
+    #     self.sheep_effect = self.apply_effect(player, Gongzhu.SHEEP, "diamond", self.sheep_effect, "Sheep")
+    #     self.doubler_effect = self.apply_effect(player, Gongzhu.DOUBLER, "club", self.doubler_effect, "Doubler")
+    #     self.blood_effect = self.apply_effect(player, Gongzhu.BLOOD, "heart", self.blood_effect, "Blood")
 
-    def go_first(self, player):
+    def go_first(self, player : Player):
         return player.get_hand().contains(Gongzhu.FIRST_CARD)
 
-    def find_largest(self, played_cards : List[Card]):
+    # Find the index of the player who goes first in the beginning of the game
+    def who_goes_first_initial(self, players : List[Player]) -> int:
+        # Find the index of the player who goes first
+        for i in range(len(players)):
+            if self.go_first(players[i]):
+                return i
+        return -1  # No player goes first
+
+    # find the index of the player who played the largest card
+    def find_largest(self, played_cards : List[Card]) -> int:
         largest_card = played_cards[0]
         index = 0
         for i in range(1, len(played_cards)):
@@ -180,3 +195,147 @@ class Gongzhu(Env):
                 largest_card = card
                 index = i
         return index
+
+class GongzhuGame:
+    def __init__(self, ai_policy : Policy = RandomPolicy):
+        self.env = Gongzhu()
+        self.round_count = 0
+        self.first_player_index = 0  # Index of the player who played first in this round
+        self.current_player_index = 0  # Index of the current player in this round
+        self.players : List[Player] = [
+            Player(id="You", name="You", avatar_url="avatar_url1"),
+            Player(id="Panda", name="Panda", avatar_url="avatar_url2"),
+            Player(id="Penguin", name="Penguin", avatar_url="avatar_url3"),
+            Player(id="Elephant", name="Elephant", avatar_url="avatar_url4"),
+        ]
+        # Policy for AI players
+        self.ai_policy = ai_policy(self.env)
+        self.playedCardsThisRound : List[Card] = [] # List of cards played this round
+    
+    def get_round_count(self):
+        return self.round_count
+
+    def inc_round_count(self):
+        self.round_count += 1
+    
+    def to_dict(self) -> dict:
+        # Calculate scores for each player
+        for player in self.players:
+            player.get_score(self.env)
+        return {
+            "players": [player.to_dict() for player in self.players],
+            "roundCount": self.round_count,
+            "firstPlayerIndex": self.first_player_index,
+            "currentPlayerIndex": self.current_player_index,
+            "cardsPlayedThisRound": [card.to_dict() for card in self.playedCardsThisRound],
+            "isEndEpisode": self.is_end_episode(),
+            "isYourTurn": self.is_your_turn(),
+            "isEndOneRound": self.is_end_one_round(),
+        }
+    
+    def get_game_state(self) -> dict:
+        return self.to_dict()
+
+    def start(self):
+        # First, deal cards to players
+        deck = Deck()
+        deck.shuffle()
+        for player in self.players:
+            for _ in range(13):
+                player.add_card_to_hand(deck.deal_card())
+            player.sort_hand()
+
+        self.round_count = 0
+        self.playedCardsThisRound = []
+        # Figure out the first player initially
+        self.first_player_index = self.env.who_goes_first_initial(self.players)
+        self.current_player_index = self.first_player_index
+        
+        return self.to_dict()
+    
+    def start_game(self):
+        self.start()
+        
+    def get_current_player_index(self) -> int:
+        return self.current_player_index
+    
+    def get_first_player_index(self) -> int:
+        return self.first_player_index
+
+    def is_end_episode(self) -> bool:
+        return self.round_count >= self.env.max_round
+
+    def is_your_turn(self) -> bool:
+        return self.current_player_index == 0
+    
+    def is_end_one_round(self) -> bool:
+        return len(self.playedCardsThisRound) >= 4
+
+    def end_episode(self):
+            
+        return self.to_dict()
+
+    # Check if a move is legal for this round
+    def is_legal_move(self, player : Player, card : Card) -> bool:
+        legal_moves = self.env.legal_moves(player.get_hand(), self.playedCardsThisRound)
+        return legal_moves.contains(card)
+
+    def next_round(self):
+        # Increase the round count by 1
+        self.round_count += 1
+        # Find the index of largest player
+        largest_index = (self.first_player_index + self.env.find_largest(self.playedCardsThisRound)) % len(self.players)
+        # The largest player collects all the cards played this round
+        self.players[largest_index].add_collected_cards(self.playedCardsThisRound)
+        self.players[largest_index].sort_collected_cards()
+        # Empty the currentPlayedCard of players
+        for player in self.players:
+            player.remove_current_played_card()
+        # Empty the played cards of this round
+        self.playedCardsThisRound = []
+        # Update the current player index
+        if (self.is_end_episode()):
+            self.first_player_index = -1
+            self.current_player_index = -1
+        else:
+            self.first_player_index = largest_index
+            self.current_player_index = largest_index
+        
+        return {
+            "largestIndex": largest_index,
+            "newRoundCount": self.round_count,
+        }
+        
+    def next_player(self):
+        # Play a card based on the policy
+        old_player_index = self.current_player_index
+        legal_moves = self.env.legal_moves(self.players[self.current_player_index].get_hand(), self.playedCardsThisRound)
+        move : Card = self.ai_policy.decide_action(legal_moves=legal_moves)
+        self.playedCardsThisRound.append(move)
+        self.players[self.current_player_index].play_specific_card(move)
+        # Update the current player index
+        self.current_player_index = (self.current_player_index + 1) % len(self.players)
+        # return self.players[self.current_player_index]
+        return {
+            "currentPlayerIndex": old_player_index,
+            "move": move.to_dict(),
+        }
+
+    def play_selected_card(self, card : Card):
+        # Check if the current player can play this card
+        if self.is_legal_move(self.players[self.current_player_index], card):
+            self.playedCardsThisRound.append(card)
+            self.players[self.current_player_index].play_specific_card(card)
+            # Update the current player index
+            self.current_player_index = (self.current_player_index + 1) % len(self.players)
+            # return self.players[self.current_player_index]
+            return self.to_dict()   
+        else:
+            return None
+
+    def declaration(self):
+        # TODO: Implement declaration phase
+        pass
+    
+    
+

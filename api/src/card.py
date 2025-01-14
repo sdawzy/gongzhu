@@ -1,5 +1,6 @@
 # Classes related to cards
 import random
+from typing import List
 
 SUITS = ["club", "diamond", "heart", "spade"]
 RANKS = ["02", "03", "04", "05", "06", "07", "08", "09",
@@ -7,13 +8,18 @@ RANKS = ["02", "03", "04", "05", "06", "07", "08", "09",
 
 class Card:
 
-    def __init__(self, rank, suit):
+    def __init__(self, rank, suit, known=True):
         if rank not in RANKS:
             raise ValueError(f"Invalid rank: {rank}")
         if suit not in SUITS:
             raise ValueError(f"Invalid suit: {suit}")
         self.rank = rank
         self.suit = suit
+        self.id = self.suit + "_" + self.rank
+        # only applicable to close declared card
+        # By default is true
+        # False means the card is closed declared and not yet played
+        self.known = known
 
     def __str__(self):
         return f"{self.suit}_{self.rank}"
@@ -51,21 +57,29 @@ class Card:
     def __ge__(self, other):
         return not self < other
     
-    def get_suit(self):
+    def get_suit(self) -> str:
         return self.suit
     
     def get_rank(self):
         return self.rank
 
+    # Convert to Dictionary
+    def to_dict(self):
+        return {
+            'id': self.id, 
+            'rank': self.rank,
+            'suit': self.suit, 
+            'known': self.known
+        }
 
 
 # Abstract class for collections of cards
 class CardCollection:
     def __init__(self, cards = None):
         if cards is not None:
-            self.cards = cards
+            self.cards : List[Card] = cards
         else:
-            self.cards = []  # Initialize the card list
+            self.cards : List[Card] = []  # Initialize the card list
 
     def __iter__(self):
         self.index = 0  # Initialize the index when iteration starts
@@ -102,7 +116,7 @@ class CardCollection:
         return card in self.cards
 
     # Remove the last card from the collection
-    def remove_card(self):
+    def remove_last_card(self):
         if not self.cards:
             raise ValueError("No cards left in the collection!")
         return self.cards.pop()
@@ -161,6 +175,12 @@ class CardCollection:
         random_index = random.randint(0, len(self.cards) - 1)
         return self.cards[random_index]
 
+    def to_dict(self):
+        return {'cards': [card.to_dict() for card in self.cards]}
+    
+    def to_list(self):
+        return [card.to_dict() for card in self.cards]
+
 
 class Deck(CardCollection):
     # Constructor to initialize a standard 52-card deck
@@ -173,7 +193,7 @@ class Deck(CardCollection):
 
     # Deal a card (specific to Deck)
     def deal_card(self):
-        return self.remove_card()
+        return self.remove_last_card()
 
 
 class Hand(CardCollection):

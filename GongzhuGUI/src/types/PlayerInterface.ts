@@ -1,4 +1,4 @@
-import { CardInterface, CloseDeclaredCard } from "./CardInterface";
+import { CardInterface } from "./CardInterface";
 import { ImageSourcePropType } from 'react-native';
 
 export interface PlayerInterface {
@@ -9,10 +9,10 @@ export interface PlayerInterface {
     hand: CardInterface[];
     collectedCards: CardInterface[];
 
-    playedCards?: CardInterface[];
+    playedCards: CardInterface[];
     currentPlayedCard?: CardInterface | null;
 
     score?: number;
-    closeDeclaredCards?: CloseDeclaredCard[] | null;
+    closeDeclaredCards?: CardInterface[] | null;
     openDeclaredCards?: CardInterface[] | null;
 }
