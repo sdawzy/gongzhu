@@ -1,7 +1,7 @@
 from .card import Hand, Card, CardCollection, Deck
 from .player import Player
 from typing import List, TYPE_CHECKING
-from .policies import Policy, RandomPolicy
+from .policy import Policy, RandomPolicy
 
 # Game environment class to manage game rules and state.
 class Env:
