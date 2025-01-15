@@ -10,3 +10,6 @@ class RandomPolicy(Policy):
     def decide_action(self, legal_moves: CardCollection, 
         player: Player = None, game_info: dict = None) -> Card:
         return legal_moves.get_one_random_card()
+    
+    def __str__(self):
+        return "RandomPolicy"
