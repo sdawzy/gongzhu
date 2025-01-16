@@ -5,7 +5,6 @@ from .policy import Policy, RandomPolicy
 import sqlite3
 import os
 
-
 DB_DIR = os.path.join("/data")
 # Game environment class to manage game rules and state.
 class Env:
@@ -84,13 +83,6 @@ class Gongzhu(Env):
         super().__init__()
         self.max_round = 13
         self.set_num_players(4)
-        # Initialize players
-        # self.players = [
-        #     Player(id="You", name="You", avatar_url="avatar_url1"),
-        #     Player(id="Panda", name="Panda", avatar_url="avatar_url2"),
-        #     Player(id="Penguin", name="Penguin", avatar_url="avatar_url3"),
-        #     Player(id="Elephant", name="Elephant", avatar_url="avatar_url4"),
-        # ]
         
         # Initialize the effects of each special card
         self.pig_effect = 1.0
@@ -155,27 +147,6 @@ class Gongzhu(Env):
         legal_moves = hand.get_cards_by_suit(played_cards[0].get_suit())
         return legal_moves if not legal_moves.is_empty() else hand
 
-    # def apply_effect(self, player : Player, target_card : Card, 
-    #                 suit, effect, card_name):
-    #     if player.get_hand().contains(target_card):
-    #         cards_by_suit = player.get_hand().get_cards_by_suit(suit)
-    #         suit_count = cards_by_suit.size()
-
-    #         if suit_count == 4:
-    #             effect = 2.0
-    #             print(f"{player.get_name()} secretly declared something.\n")
-    #         if suit_count >= 5:
-    #             effect = 4.0
-    #             print(f"{player.get_name()} openly declared the {card_name}.\n")
-
-    #     return effect
-
-    # def declaration(self, player):
-    #     self.pig_effect = self.apply_effect(player, Gongzhu.PIG, "spade", self.pig_effect, "Pig")
-    #     self.sheep_effect = self.apply_effect(player, Gongzhu.SHEEP, "diamond", self.sheep_effect, "Sheep")
-    #     self.doubler_effect = self.apply_effect(player, Gongzhu.DOUBLER, "club", self.doubler_effect, "Doubler")
-    #     self.blood_effect = self.apply_effect(player, Gongzhu.BLOOD, "heart", self.blood_effect, "Blood")
-
     def go_first(self, player : Player):
         return player.get_hand().contains(Gongzhu.FIRST_CARD)
 
@@ -202,7 +173,10 @@ class Gongzhu(Env):
 
 class GongzhuGame:
     def __init__(self, ai_policy : Policy = RandomPolicy, db_dir=None):
-        from os import path
+        import secrets
+        # A random unique identifier
+        self.id : str = secrets.token_hex(16)
+
         self.env = Gongzhu()
         self.round_count = 0
         self.first_player_index = 0  # Index of the player who played first in this round
@@ -223,6 +197,9 @@ class GongzhuGame:
         # Database directory for storing game history
         self.db_dir = DB_DIR if db_dir is None else db_dir
 
+    def get_id(self):
+        return self.id
+
     def get_round_count(self):
         return self.round_count
 
@@ -234,6 +211,7 @@ class GongzhuGame:
         for player in self.players:
             player.get_score(self.env)
         return {
+            "id": self.id,
             "players": [player.to_dict() for player in self.players],
             "roundCount": self.round_count,
             "firstPlayerIndex": self.first_player_index,
@@ -296,8 +274,10 @@ class GongzhuGame:
         return len(self.playedCardsThisRound) >= 4
 
     def end_episode(self):
-        
         return self.to_dict()
+
+    def add_history(self, record : dict):
+        self.history.append(record)
 
 
     # Check if a move is legal for this round
@@ -327,7 +307,7 @@ class GongzhuGame:
             self.first_player_index = largest_index
             self.current_player_index = largest_index
         
-        self.history.append({
+        self.add_history({
             "round": self.round_count,
             "largestIndex": largest_index,
         })
@@ -347,7 +327,7 @@ class GongzhuGame:
         # Update the current player index
         self.current_player_index = (self.current_player_index + 1) % len(self.players)
         # Update the game history
-        self.history.append({
+        self.add_history({
             "round": self.round_count,
             "playerIndex": old_player_index,
             "move": move.to_dict(),

@@ -25,6 +25,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
     const [firstPlayerIndex, setFirstPlayerIndex] = useState(0);
     const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
     const [roundCount, setRoundCount] = useState(0);
+    const [gameId, setGameId] = useState<String | null> (null);
     const maxRounds = 13;
 
     const [cardsPlayedThisRound, setCardsPlayedThisRound] = useState<CardInterface[]>([]);
@@ -92,11 +93,11 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
     const handleNextPlayer = () => {
         // Logic to move to the next player, for example, using a round-robin approach.
         if (online) {
-            axios.get(URL + '/next_player').then((response) => {
+            axios.post(URL + '/next_player', {'id' : gameId}).then((response) => {
                 const data = response.data;
                 const move = data.move;
                 addLog(`Round ${roundCount+1}: ` + `${players[currentPlayerIndex].name} played ${move.rank} of ${move.suit}.`);
-                fetchGameStates();
+                fetchGameStates(gameId);
                 // setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
             }).catch((error) => {
                 console.error('Error fetching next player: ', error);
@@ -117,7 +118,12 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
         setSelectedCard(null);
 
         if ( online) {
-            axios.post(URL + '/play_card', currentPlayedCard).then((response) => {
+            const requestData = {
+                'id' : gameId,
+                'suit' : currentPlayedCard.suit,
+                'rank' : currentPlayedCard.rank,
+            }
+            axios.post(URL + '/play_card', requestData).then((response) => {
                 // const data = response.data;
                 const statusCode = response.status;
                 if (statusCode === 400) {
@@ -125,7 +131,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
                     return;
                 }
                 addLog(`Round ${roundCount+1}: ` + `you played ${currentPlayedCard.rank} of ${currentPlayedCard.suit}.`);
-                fetchGameStates();
+                fetchGameStates(gameId);
                 // setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
             }).catch((error) => {
                 if (error.status === 400 ) {
@@ -142,11 +148,11 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
     const endOneRound = () => {
         // Figure out the largest of this round based on the played cards
         if (online) {
-            axios.get(URL + '/next_round').then((response) => {
+            axios.post(URL + '/next_round', {'id' : gameId}).then((response) => {
                 const data = response.data;
                 const largestIndex = data.largestIndex;
                 addLog(`Round ${roundCount+1}: ` + `${players[largestIndex].name} was largest. `);
-                fetchGameStates();
+                fetchGameStates(gameId);
                 // setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
             }).catch((error) => {
                 console.error('Error fetching next round: ', error);
@@ -176,17 +182,20 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
         console.log('Episode ended');
     }
 
-    const fetchGameStates = async () => {
+    const fetchGameStates = async (id: String | null) => {
         try {
             setLoading(true); // Start loading
-            const response = await axios.get(URL + '/get_game_state'); // Fetch data
+            const response = await axios.post(URL + '/get_game_state', {'id' : id});
+            // .then(response => {
             const game_state = response.data.game_state;
             setPlayers(game_state.players); // Update state with player data
             setFirstPlayerIndex(game_state.firstPlayerIndex); // Update state with the index of the first player
             setRoundCount(game_state.roundCount); // Update state with the current round count
             setCurrentPlayerIndex(game_state.currentPlayerIndex); // Update state with the index of the current player
             setCardsPlayedThisRound(game_state.cardsPlayedThisRound); // Update state with the cards played this round
+            setGameId(id);
             console.log(game_state);
+            // });
         } catch (err) {
             console.error("Failed to fetch players:", err);
             setError("Failed to load player data.");
@@ -200,7 +209,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
             axios.get(URL + '/start_game')
             .then(response => {
                 console.log(response.data);
-                fetchGameStates();  // Fetch cards for player 1 after game starts
+                fetchGameStates(response.data.id);
             })
             .catch(error => {
                 console.error("There was an error starting the game!", error);
