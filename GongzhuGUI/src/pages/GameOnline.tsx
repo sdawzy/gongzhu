@@ -20,90 +20,23 @@ const generateDeck = () => {
   return deck;
 };
 
-// Helper function to shuffle the deck
-const shuffleDeck = (deck) => {
-  return deck.sort(() => Math.random() - 0.5);
-  // return deck;
-};
-
-// Helper function to deal cards to players
-const dealCards = (deck) => {
-  const hands = [[], [], [], []];
-  deck.forEach((card, index) => {
-    hands[index % 4].push(card);
-  });
-  // Sort hands
-  for (let i = 0; i < 4; i++) {
-    hands[i].sort((a, b) => a.id < b.id? -1 : 1);  
-  }
-  return hands;
-};
-
 const GameOnline : React.FC = () => {
-  const [hands, setHands] = useState([]);
-  const [currentPlayer, setCurrentPlayer] = useState(0); // Track the current player
-  // setCurrentPlayer(1);
-
-  const startGame = () => {
-    const deck = shuffleDeck(generateDeck());
-    const dealtPlayers = dealCards(deck);
-    setHands(dealtPlayers);
-  };
-
-  const playerInfo = [
-    { name: 'You', avatar: require('../../assets/images/avatars/You.png') },
-    { name: 'Mr. Panda', avatar: require('../../assets/images/avatars/Panda.png') },
-    { name: 'Mr. Penguin', avatar: require('../../assets/images/avatars/Penguin.png') },
-    { name: 'Mrs. Elephant', avatar: require('../../assets/images/avatars/Elephant.png') },
-  ]
-
-  const collectedCards : CardInterface[][] = [
-    [{suit : 'spade', rank : "02", id : 'spade_02'}, {suit : 'club', rank : "10", id : 'club_02'}], // Player 1
-    [{suit : 'heart', rank : "02", id : 'heart_02'}], // Player 2
-    [{suit : 'diamond', rank : "02", id : 'diamond_02'}], // Player 3
-    [], // Player 4
-  ]
-
-  const openDeclaredCards : CardInterface[][] = [
-    [{suit : 'heart', rank : "02", id : 'heart_02'}], // Player 1
-    [{suit : 'club', rank : "10", id : 'club_10'}], // Player 2
-    [{suit : 'diamond', rank : "02", id : 'diamond_02'}], // Player 3
-    [{suit : 'club', rank : "02", id : 'club_02'}], // Player 4
-  ]
-
-
-  const currentPlayedCards : (CardInterface | null) [] = [
-    {suit : 'diamond', rank : "14", id : 'diamond_14'}, // Player 1
-    {suit : 'diamond', rank : "06", id : 'diamond_06'}, // Player 2
-    {suit : 'diamond', rank : "11", id : 'diamond_11'}, // Player 3
-    {suit : 'diamond', rank : "12", id : 'diamond_12'}, // Player 4
-  ]
-  
-  const scores : number[] = [100, -20, 30, 60];
-
-  const players : PlayerInterface[] = hands.map((hand, index) => ({
-      name: playerInfo[index].name,
-      avatar: playerInfo[index].avatar,
-      hand: hand,
-      collectedCards: [],
-      playedCards: [],
-      currentPlayedCard: null,
-    }));
+  const [gameStarted, setGameStarted] = useState<boolean>(false);
 
   return (
     <View style={styles.container}>
-      {players.length === 0 ? (
+      {!gameStarted ? (
         <View>        
             <Hand 
               hand={generateDeck()} 
               rotation={0}
               visible={false}
             />
-            <Button title="Start Game" onPress={startGame} />
+            <Button title="Start Game" onPress={setGameStarted(()=>true)} />
         </View>
       ) : (
         <GameTable 
-          initialPlayers={players} 
+          initialPlayers={[]} 
           online={true}
         />
       )}

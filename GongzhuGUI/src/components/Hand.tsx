@@ -37,7 +37,7 @@ const Hand: React.FC< {
 
     if (visible === true && selectable) {
       return (
-          <View style={[styles.handContainer, {width: (numberOfCards-1) * spacing + 100}]}>    
+          <View style={[styles.handContainer, {width: (numberOfCards-1) * spacing + 120}]}>    
               <FlatList horizontal={true}
               data={hand}
               keyExtractor={(item) => item.id}
