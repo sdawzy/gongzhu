@@ -75,3 +75,6 @@ def next_round_route():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=1926)  # Run the Flask app
+
+# option 1: json
+# option 2: sqlite

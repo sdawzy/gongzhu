@@ -2,7 +2,11 @@ from .card import Hand, Card, CardCollection, Deck
 from .player import Player
 from typing import List, TYPE_CHECKING
 from .policy import Policy, RandomPolicy
+import sqlite3
+import os
 
+
+DB_DIR = os.path.join("/data")
 # Game environment class to manage game rules and state.
 class Env:
     # Class-level variables for round count and number of players
@@ -197,7 +201,8 @@ class Gongzhu(Env):
         return index
 
 class GongzhuGame:
-    def __init__(self, ai_policy : Policy = RandomPolicy):
+    def __init__(self, ai_policy : Policy = RandomPolicy, db_dir=None):
+        from os import path
         self.env = Gongzhu()
         self.round_count = 0
         self.first_player_index = 0  # Index of the player who played first in this round
@@ -214,6 +219,9 @@ class GongzhuGame:
 
         # Game history information
         self.history = []
+
+        # Database directory for storing game history
+        self.db_dir = DB_DIR if db_dir is None else db_dir
 
     def get_round_count(self):
         return self.round_count
@@ -235,6 +243,16 @@ class GongzhuGame:
             "isYourTurn": self.is_your_turn(),
             "isEndOneRound": self.is_end_one_round(),
         }
+
+    def save_histroy(self):
+        pass
+        # TODO: Implement save_histroy
+        # if self.db_dir is None:
+        #     return
+        # game_state = self.to_dict()
+        # history = self.history
+        # with open(path.join(self.db_dir, f"game_{self.round_count}.json"), "w") as f:
+        #     json.dump(game_state, f)
     
     def get_game_state(self) -> dict:
         return self.to_dict()
