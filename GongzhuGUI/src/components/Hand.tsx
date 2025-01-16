@@ -7,14 +7,22 @@ const Hand: React.FC< {
     hand: CardInterface[], // List of cards in the hand
     rotation?: number,  // Optional rotation angle
     visible?: boolean,  // Optional visibility state
+    spacing?: number, // Optional spacing
+    selectable?: boolean, // Optional
     selectedCard?: CardInterface | null,  // Optional selected card ID
     setSelectedCard?: Function,  // Optional callback function to update selected card state
-  }> = ({ hand, rotation, visible, selectedCard, setSelectedCard }) => {
+  }> = ({ hand, rotation, visible, spacing, selectable, selectedCard, setSelectedCard }) => {
     if (rotation === undefined) { 
       rotation = 0;  // Default rotation is 0 degrees if not provided
     }
     if (visible === undefined) { 
       visible = true;  // Default visibility is true if not provided
+    }
+    if (spacing === undefined) { 
+      spacing = 30;  // Default spacing is 10 pixels if not provided
+    }
+    if (selectable === undefined) { 
+      selectable = true;  // Default selectable is true if not provided
     }
 
     const cardBack = require('../../assets/images/cards/card_back.png');
@@ -27,9 +35,9 @@ const Hand: React.FC< {
         setSelectedCard(card);
     };
 
-    if (visible === true) {
+    if (visible === true && selectable) {
       return (
-          <View style={styles.handContainer}>    
+          <View style={[styles.handContainer, {width: (numberOfCards-1) * spacing + 100}]}>    
               <FlatList horizontal={true}
               data={hand}
               keyExtractor={(item) => item.id}
@@ -37,7 +45,7 @@ const Hand: React.FC< {
                   <TouchableOpacity onPress={() => handleCardPress(item)}>
                       <View style={[styles.cardWrapper, 
                       selectedCard == item && styles.selectedCardWrapper,
-                      {left: index * 30,}]}>
+                      {left: index * spacing,}]}>
                           <Card 
                               card={item}
                               visible={visible}
@@ -45,27 +53,27 @@ const Hand: React.FC< {
                       </View>
                   </TouchableOpacity>
               )}
-              contentContainerStyle={[styles.listContent, {width: (numberOfCards-1) * 30 + 100}]}
+              contentContainerStyle={[styles.listContent, {width: (numberOfCards-1) * spacing + 100}]}
               style={{ transform: [{ rotate: `${rotation}deg` }] }}
               />
           </View>
       );
     } else { 
       return (
-          <View style={styles.handContainer}>
+          <View style={[styles.handContainer, {width: (numberOfCards-1) * spacing + 100}]}>
               <FlatList horizontal={true}
               data={hand}
               keyExtractor={(item) => item.id}
               renderItem={({ item, index }) => (
                   <View style={[styles.cardWrapper, 
-                  {left: index * 30,}]}>
+                  {left: index * spacing,}]}>
                       <Card 
                           card={item}
                           visible={visible}
                       />
                   </View>
               )}
-              contentContainerStyle={[styles.listContent, {width: (numberOfCards-1) * 30 + 100}]}
+              contentContainerStyle={[styles.listContent, {width: (numberOfCards-1) * spacing + 100}]}
               style={{ transform: [{ rotate: `${rotation}deg` }] }}
               />
           </View>
