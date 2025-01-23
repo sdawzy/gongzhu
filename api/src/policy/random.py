@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from env import Env
 
 # Random policy
+# Play a random card from legal moves
 class RandomPolicy(Policy):
     def decide_action(self, legal_moves: CardCollection, 
         player: Player = None, game_info: dict = None) -> Card:

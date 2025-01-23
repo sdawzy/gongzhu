@@ -1,21 +1,19 @@
 from typing import List, TYPE_CHECKING
 from ..card import Card, CardCollection
 from ..player import Player
+from .policy import Policy
 if TYPE_CHECKING:
     from env import Env
 
-class Policy:
+# Simple greedy policy
 
-    def __init__(self, env: 'Env', epsilon: float = 0.05):
-        self.env = env
-        self.epsilon = epsilon
+class GreedyPolicy(Policy):
 
     def decide_action(self, 
         legal_moves: CardCollection,
         player: Player = None, 
         game_info: dict = None) -> Card:
-        raise NotImplementedError("'decide_action' not yet implemented.")
         pass
 
     def __str___(self):
-        return self.__class__.__name__
+        return f'GreedyPolicy_Epsilon={self.epsilon}'
