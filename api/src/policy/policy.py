@@ -1,5 +1,7 @@
 from typing import List, TYPE_CHECKING
 from ..card import Card, CardCollection
+from ..card import PIG, SHEEP, DOUBLER, BLOOD, PIGPEN, SHEEPPEN, DOUBLERCATCHER
+from ..card import SAFESPADE, SAFECLUB, SAFEDIAMOND
 from ..player import Player
 if TYPE_CHECKING:
     from env import Env
@@ -19,3 +21,58 @@ class Policy:
 
     def __str___(self):
         return self.__class__.__name__
+    
+    # Some helper functions
+
+    def getCardsPlayedBySuit(self, suit: str, game_info: dict) -> CardCollection:
+        pass
+
+    def getCardsNotPlayedBySuit(self, suit: str, game_info: dict) -> CardCollection:
+        pass
+    
+    def getDiamondsSmallerThanSheep(self, hand: CardCollection) -> CardCollection:
+        ret = CardCollection()
+        for card in SAFEDIAMOND:
+            if card in hand:
+                ret.add_card(card)
+        return ret
+
+    def getClubsSmallerThanDoubler(self, hand: CardCollection) -> CardCollection:
+        ret = CardCollection()
+        for card in SAFECLUB:
+            if card in hand:
+                ret.add_card(card)
+        return ret
+
+    def getSpadesSmallerThanPig(self, hand: CardCollection) -> CardCollection:
+        ret = CardCollection()
+        for card in SAFESPADE:
+            if card in hand:
+                ret.add_card(card)
+        return ret
+
+    def getCardsSmallerThan(self, hand: CardCollection, card: Card) -> CardCollection:
+        ret = CardCollection()
+        for card_ in hand:
+            if card_ > card:
+                break
+            else:
+                ret.add_card(card_)
+        return ret
+    
+    def getCardsLargerThan(self, hand: CardCollection, card: Card) -> CardCollection:
+        ret = CardCollection()
+        for card_ in hand:
+            if card_ > card:
+                ret.add_card(card_)
+        return ret
+
+    def getCardsExcludingOneCard(self, hand: CardCollection, card: Card) -> CardCollection:
+        ret = CardCollection(cards = hand.get_cards())
+        if (card in hand):
+            ret.remove_specific_card(card)
+        return ret
+
+    def getCurrentLargest(self, playedCards: List[Card]) -> Card:
+        return self.env.find_largest_card(playedCards)
+        pass

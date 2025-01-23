@@ -3,6 +3,7 @@ from .player import Player
 from typing import List, TYPE_CHECKING
 from .policy import Policy, RandomPolicy
 import sqlite3
+import json
 import os
 
 DB_DIR = os.path.join("/data")
@@ -159,7 +160,7 @@ class Gongzhu(Env):
         return -1  # No player goes first
 
     # find the index of the player who played the largest card
-    def find_largest(self, played_cards : List[Card]) -> int:
+    def find_largest_index(self, played_cards : List[Card]) -> int:
         largest_card = played_cards[0]
         index = 0
         for i in range(1, len(played_cards)):
@@ -170,6 +171,19 @@ class Gongzhu(Env):
                 largest_card = card
                 index = i
         return index
+    
+    def find_largest_card(self, played_cards : List[Card]):
+        # Return None if no card has been played yet
+        if len(played_cards) == 0:
+            return None
+        largest_card = played_cards[0]
+        for i in range(1, len(played_cards)):
+            card = played_cards[i]
+            if card.get_suit() != largest_card.get_suit():
+                continue
+            if card > largest_card:
+                largest_card = card
+        return largest_card
 
 class GongzhuGame:
     def __init__(self, ai_policy : Policy = RandomPolicy, db_dir=None):
@@ -223,6 +237,9 @@ class GongzhuGame:
         }
 
     def save_histroy(self):
+        conn = sqlite3.connect(self.db_dir)
+        cursor = conn.cursor()
+        
         pass
         # TODO: Implement save_histroy
         # if self.db_dir is None:
@@ -290,7 +307,7 @@ class GongzhuGame:
         # Increase the round count by 1
         self.round_count += 1
         # Find the index of largest player
-        largest_index = (self.first_player_index + self.env.find_largest(self.playedCardsThisRound)) % len(self.players)
+        largest_index = (self.first_player_index + self.env.find_largest_index(self.playedCardsThisRound)) % len(self.players)
         # The largest player collects all the cards played this round
         self.players[largest_index].add_collected_cards(self.playedCardsThisRound)
         self.players[largest_index].sort_collected_cards()
@@ -321,7 +338,7 @@ class GongzhuGame:
         # Play a card based on the policy
         old_player_index = self.current_player_index
         legal_moves = self.env.legal_moves(self.players[self.current_player_index].get_hand(), self.playedCardsThisRound)
-        move : Card = self.ai_policy.decide_action(legal_moves=legal_moves)
+        move : Card = self.ai_policy.decide_action(legal_moves=legal_moves, game_info=self.to_dict())
         self.playedCardsThisRound.append(move)
         self.players[self.current_player_index].play_specific_card(move)
         # Update the current player index

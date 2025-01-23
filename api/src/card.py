@@ -93,6 +93,9 @@ class CardCollection:
         else:
             raise StopIteration
 
+    def __getitem__(self, index):
+        return self.cards[index]
+
     def get_cards(self):
         return self.cards
 
@@ -130,6 +133,9 @@ class CardCollection:
 
     # Get the size of the collection
     def size(self):
+        return len(self.cards)
+
+    def __len__(self):
         return len(self.cards)
 
     def is_empty(self):
@@ -204,3 +210,66 @@ class Hand(CardCollection):
     # Specific method to display hand
     def show_hand(self, player_name):
         self.show(player_name)
+
+# Some Constant Cards and Hands
+PIG = Card("12", "spade")
+SHEEP = Card("11", "diamond")
+DOUBLER = Card("10", "club")
+BLOOD = Card("14", "heart")
+
+PIGPEN = CardCollection(
+    cards=[Card("13", "spade"), Card("14", "spade")]
+)
+SHEEPPEN = CardCollection(
+    cards=[Card("12", "diamond"), Card("13", "diamond"), Card("14", "diamond")]
+)
+DOUBLERCATCHER = CardCollection(
+    cards=[Card("11", "club"), Card("12", "club"), Card("13", "club"), Card("14", "club")]
+)
+
+SAFESPADE = CardCollection(
+    [
+        Card("02", "spade"),
+        Card("03", "spade"),
+        Card("04", "spade"),
+        Card("05", "spade"),
+        Card("06", "spade"),
+        Card("07", "spade"),
+        Card("08", "spade"),
+        Card("09", "spade"),
+        Card("10", "spade"),
+        Card("11", "spade"),
+    ]
+)
+
+SAFECLUB = CardCollection(
+    [
+        Card("02", "club"),
+        Card("03", "club"),
+        Card("04", "club"),
+        Card("05", "club"),
+        Card("06", "club"),
+        Card("07", "club"),
+        Card("08", "club"),
+        Card("09", "club"),
+    ]
+)
+
+SAFEDIAMOND = CardCollection(
+    [
+        Card("02", "diamond"),
+        Card("03", "diamond"),
+        Card("04", "diamond"),
+        Card("05", "diamond"),
+        Card("06", "diamond"),
+        Card("07", "diamond"),
+        Card("08", "diamond"),
+        Card("09", "diamond"),
+        Card("10", "diamond"),
+    ]
+)
+
+SPADESUITE = CardCollection([Card(rank, "spade") for rank in RANKS])
+DIAMONDSUITE = CardCollection([Card(rank, "diamond") for rank in RANKS])
+HEARTSUITE = CardCollection([Card(rank, "heart") for rank in RANKS])
+CLUBSUITE = CardCollection([Card(rank, "club") for rank in RANKS])
