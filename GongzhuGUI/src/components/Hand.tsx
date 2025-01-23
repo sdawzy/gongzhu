@@ -103,8 +103,6 @@ const styles = StyleSheet.create({
     },
     listContent: {
       height: '100%',
-    //   alignItems: 'flex-end'
-      
       flexDirection: 'row',
       alignItems: 'flex-end', // Aligns cards to the bottom of the container
       paddingBottom: 10, // Adds spacing from the bottom
