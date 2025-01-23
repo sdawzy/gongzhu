@@ -9,7 +9,7 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-DB_DIR = os.path.join("record.db")
+DB_DIR = os.path.join("data/record.db")
 # A dictionary to store ongoing games
 games : dict = {}
 # game : GongzhuGame = GongzhuGame(ai_policy=RandomPolicy)  # Initialize your game

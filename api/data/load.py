@@ -12,10 +12,8 @@ cursor = conn.cursor()
 cursor.execute('SELECT * FROM data')  # Fetch all columns
 rows = cursor.fetchall()  # Fetch all rows
 
-# Display the results
-print(len(rows)) 
-# for row in rows:
-#     print(row)
+# Display the number of records
+print(f'Number of records: {len(rows)}') 
 
 # Close the connection
 conn.close()

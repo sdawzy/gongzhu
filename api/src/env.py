@@ -211,7 +211,8 @@ class GongzhuGame:
         # Database directory for storing game history
         self.db_dir = DB_DIR if db_dir is None else db_dir
 
-        print(self.db_dir)
+        # 
+        self.allow_declarations = False
     def get_id(self):
         return self.id
 
@@ -252,6 +253,7 @@ class GongzhuGame:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 game_id TEXT,
                 ai_policy TEXT,
+                allow_declarations BOOLEAN,
                 history TEXT
             )
         ''')
@@ -260,14 +262,12 @@ class GongzhuGame:
         # Save the game state to the database
         game_id = self.get_id()
         ai_policy = str(self.ai_policy)
+        allow_declarations = self.allow_declarations
         history = json.dumps(self.get_history())
-        cursor.execute('INSERT INTO data (game_id, ai_policy, history) VALUES (?, ?, ?)', 
-            (game_id, ai_policy, history))
+        cursor.execute('INSERT INTO data (game_id, ai_policy, allow_declarations, history) VALUES (?, ?, ?, ?)', 
+            (game_id, ai_policy, allow_declarations, history))
         
         conn.commit()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-        tables = cursor.fetchall()
-        print(tables)  # Output: [('data',), ...]
         conn.close()
     
     def get_game_state(self) -> dict:
@@ -405,6 +405,48 @@ class GongzhuGame:
     def declaration(self):
         # TODO: Implement declaration phase
         pass
-    
-    
 
+class GongzhuGameMultiround(GongzhuGame):
+    def __init__(self, threshold = 1000, ai_policy : Policy = RandomPolicy, db_dir=None):
+        super().__init__(ai_policy, db_dir)
+
+        self.episode_count = 1
+
+        self.threshold = threshold
+        # You and player[2]
+        self.team1_scores : List[int] = []
+        # player[1] and player[3]
+        self.team2_scores : List[int] = []
+    
+    def new_episode(self):
+
+        self.episode_count += 1
+        self.team1_scores.append(self.players[0].get_score() + self.players[2].get_score())
+        self.team1_scores.append(self.players[1].get_score() + self.players[3].get_score())
+
+        # Reset player data
+        for player in self.players:
+            player.reset()
+        
+        # Start a new game
+        return self.start()
+
+    def to_dict(self) -> dict:
+        # Calculate scores for each player
+        for player in self.players:
+            player.get_score(self.env)
+        return {
+            "id": self.id,
+            "aiPolicy": str(self.ai_policy),
+            "players": [player.to_dict() for player in self.players],
+            "roundCount": self.round_count,
+            "firstPlayerIndex": self.first_player_index,
+            "currentPlayerIndex": self.current_player_index,
+            "cardsPlayedThisRound": [card.to_dict() for card in self.playedCardsThisRound],
+            "isEndEpisode": self.is_end_episode(),
+            "isYourTurn": self.is_your_turn(),
+            "isEndOneRound": self.is_end_one_round(),
+            "episode": self.episode_count,
+            "team1Scores": self.team1_scores,
+            "team2Scores": self.team2_scores,
+        }

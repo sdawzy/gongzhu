@@ -30,6 +30,18 @@ class Player:
         # """Get the player's name."""
         # return self.name
 
+    # reset player data
+    def reset(self):
+        self._hand = Hand()
+        self._collectedCards = CardCollection()  # Anonymous subclass not required in Python
+
+        self._playedCards = CardCollection()  # Anonymous subclass not required in Python
+        self._currentPlayedCard : Card = None  # Anonymous subclass not required in Python
+
+        self._score = 0  # Anonymous subclass not required in Python
+        self._closeDeclaredCards = CardCollection() # Anonymous subclass not required in Python
+        self._openDeclaredCards = CardCollection() # Anonymous subclass not required in Python
+    
     # Get methods
     def get_id(self):
         """Get the player's ID."""

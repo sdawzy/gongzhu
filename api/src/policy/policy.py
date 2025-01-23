@@ -7,7 +7,6 @@ if TYPE_CHECKING:
     from env import Env
 
 class Policy:
-
     def __init__(self, env: 'Env', epsilon: float = 0.05):
         self.env = env
         self.epsilon = epsilon
@@ -76,4 +75,3 @@ class Policy:
 
     def getCurrentLargest(self, playedCards: List[Card]) -> Card:
         return self.env.find_largest_card(playedCards)
-        pass
