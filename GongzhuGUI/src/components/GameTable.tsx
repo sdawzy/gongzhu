@@ -179,7 +179,15 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
     const endEpisode = () => {
         // Episode end logic here
         // TODO: Implement Online version of this function
-        console.log('Episode ended');
+        console.log('Episode ended. New Game started.');
+        axios.get(URL + '/start_game')
+            .then(response => {
+                console.log(response.data);
+                fetchGameStates(response.data.id);
+            })
+            .catch(error => {
+                console.error("There was an error starting the game!", error);
+            });
     }
 
     const fetchGameStates = async (id: String | null) => {
@@ -420,7 +428,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
         </Modal>
             {/* Conditional Button */}
             {isEndEpisode? 
-                <Button title="Show Result (n)" onPress={handleNextTurn} /> : 
+                <Button title="New Game (n)" onPress={handleNextTurn} /> : 
             isEndOneRound ? 
                 <Button title="End this Round (n)" onPress={handleNextTurn} /> : 
             (isYourTurn ? (
