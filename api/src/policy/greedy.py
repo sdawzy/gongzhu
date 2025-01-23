@@ -44,8 +44,6 @@ class GreedyPolicy(Policy):
                 cardToPlay = cardsWithoutSheep.get_one_random_card()
             
         else:
-            # print(legal_moves)
-            # print(cardsPlayedThisRound)
             # If legal moves are the same suit as the first played card
             if legal_moves[0].get_suit() == cardsPlayedThisRound[0].get_suit():
                 current_suit = legal_moves[0].get_suit()

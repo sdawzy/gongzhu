@@ -4,10 +4,12 @@ from flask_cors import CORS
 from src.env import GongzhuGame
 from src.card import Card
 from src.policy import RandomPolicy, GreedyPolicy
+import os
 
 app = Flask(__name__)
 CORS(app)
 
+DB_DIR = os.path.join("record.db")
 # A dictionary to store ongoing games
 games : dict = {}
 # game : GongzhuGame = GongzhuGame(ai_policy=RandomPolicy)  # Initialize your game
@@ -20,7 +22,7 @@ def get_game_by_id(game_id):
 def start_game_route():
     global games
     # game = GongzhuGame(ai_policy=RandomPolicy)
-    game = GongzhuGame(ai_policy=GreedyPolicy)
+    game = GongzhuGame(ai_policy=GreedyPolicy, db_dir=DB_DIR)
     game.start_game()  # Start a new game
     games[game.get_id()] = game  # Store the game in the dictionary
     # print(games)

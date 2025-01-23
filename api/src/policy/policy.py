@@ -68,9 +68,10 @@ class Policy:
         return ret
 
     def getCardsExcludingOneCard(self, hand: CardCollection, card: Card) -> CardCollection:
-        ret = CardCollection(cards = hand.get_cards())
-        if (card in hand):
-            ret.remove_specific_card(card)
+        ret = CardCollection()
+        for card_ in hand:
+            if card_!= card:
+                ret.add_card(card_)
         return ret
 
     def getCurrentLargest(self, playedCards: List[Card]) -> Card:

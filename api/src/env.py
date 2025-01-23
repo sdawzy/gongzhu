@@ -6,7 +6,7 @@ import sqlite3
 import json
 import os
 
-DB_DIR = os.path.join("/data")
+DB_DIR = os.path.join("/data/record.db")
 # Game environment class to manage game rules and state.
 class Env:
     # Class-level variables for round count and number of players
@@ -211,6 +211,7 @@ class GongzhuGame:
         # Database directory for storing game history
         self.db_dir = DB_DIR if db_dir is None else db_dir
 
+        print(self.db_dir)
     def get_id(self):
         return self.id
 
@@ -226,6 +227,7 @@ class GongzhuGame:
             player.get_score(self.env)
         return {
             "id": self.id,
+            "aiPolicy": str(self.ai_policy),
             "players": [player.to_dict() for player in self.players],
             "roundCount": self.round_count,
             "firstPlayerIndex": self.first_player_index,
@@ -236,18 +238,37 @@ class GongzhuGame:
             "isEndOneRound": self.is_end_one_round(),
         }
 
+    def get_history(self) -> List[dict]:
+        return self.history
+
     def save_histroy(self):
+        # Connect to the database
         conn = sqlite3.connect(self.db_dir)
         cursor = conn.cursor()
         
-        pass
-        # TODO: Implement save_histroy
-        # if self.db_dir is None:
-        #     return
-        # game_state = self.to_dict()
-        # history = self.history
-        # with open(path.join(self.db_dir, f"game_{self.round_count}.json"), "w") as f:
-        #     json.dump(game_state, f)
+        # Create a table with a JSON column
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS data (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                game_id TEXT,
+                ai_policy TEXT,
+                history TEXT
+            )
+        ''')
+        conn.commit()
+
+        # Save the game state to the database
+        game_id = self.get_id()
+        ai_policy = str(self.ai_policy)
+        history = json.dumps(self.get_history())
+        cursor.execute('INSERT INTO data (game_id, ai_policy, history) VALUES (?, ?, ?)', 
+            (game_id, ai_policy, history))
+        
+        conn.commit()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = cursor.fetchall()
+        print(tables)  # Output: [('data',), ...]
+        conn.close()
     
     def get_game_state(self) -> dict:
         return self.to_dict()
@@ -304,6 +325,12 @@ class GongzhuGame:
 
 
     def next_round(self):
+        # Sanity check: ensure each player has exactly same number of cards
+        assert \
+            (len(self.players[0].get_hand()) == len(self.players[1].get_hand()) ) and \
+            (len(self.players[0].get_hand()) == len(self.players[2].get_hand()) ) and \
+            (len(self.players[0].get_hand()) == len(self.players[3].get_hand()) ), \
+            "Error: Different number of cards in hand!"
         # Increase the round count by 1
         self.round_count += 1
         # Find the index of largest player
@@ -320,6 +347,9 @@ class GongzhuGame:
         if (self.is_end_episode()):
             self.first_player_index = -1
             self.current_player_index = -1
+            # Save the game history
+            print("Saving game history...")
+            self.save_histroy()
         else:
             self.first_player_index = largest_index
             self.current_player_index = largest_index
