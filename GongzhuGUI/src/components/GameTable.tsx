@@ -19,7 +19,10 @@ const defaultAvatars = [
     require('../../assets/images/avatars/Elephant.png')
 ];
 
-const API_URL = process.env.API_URL;
+const API_URL = Constants.expoConfig?.extra?.apiUrl;
+// ? Constants.expoConfig?.extra?.apiUrl : "http://localhost:1926";
+// console.log(Constants);
+// console.log("API_URL: "+ API_URL);
 
 const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
     const [players, setPlayers] = useState<PlayerInterface[]>(online ? [] : initialPlayers);  
@@ -38,7 +41,6 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
     const bottonTitle = "Show Cards & Declaration";
     const [error, setError] = useState<string | null>(null);
 
-    
 
     const addLog = (message: string) => {
         setLogs(prevLogs => [message, ...prevLogs]);
