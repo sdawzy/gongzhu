@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "start": "node node_modules/react-native/local-cli/cli.js start"
+    "start": "node node_modules/react-native/local-cli/cli.js start",
+    "web-build": "expo export:web"
   },
   "dependencies": {
     "@expo/metro-runtime": "~4.0.0",
@@ -11,6 +12,7 @@
     "@react-navigation/native-stack": "^7.2.0",
     "@react-navigation/stack": "^7.1.1",
     "axios": "^1.7.9",
+    "dotenv": "^16.4.7",
     "expo": "^52.0.24",
     "react-dom": "18.3.1",
     "react-native": "0.76.5",

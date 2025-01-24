@@ -4,11 +4,12 @@ import Card from '../components/Card';
 import Hand from '../components/Hand';
 import { CardInterface, PlayerInterface } from '../types';
 import axios from 'axios';
+import Constants from 'expo-constants';
 
 interface GameTableProps {
   initialPlayers: PlayerInterface[]; // Array of arrays of cards for each player
   online: boolean; // Whether the game is being played online or not
-}
+};
 
 
 const defaultAvatars = [
@@ -16,7 +17,9 @@ const defaultAvatars = [
     require('../../assets/images/avatars/Panda.png'),
     require('../../assets/images/avatars/Penguin.png'),
     require('../../assets/images/avatars/Elephant.png')
-]
+];
+
+const API_URL = process.env.API_URL;
 
 const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
     const [players, setPlayers] = useState<PlayerInterface[]>(online ? [] : initialPlayers);  
@@ -35,7 +38,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
     const bottonTitle = "Show Cards & Declaration";
     const [error, setError] = useState<string | null>(null);
 
-    const URL = 'http://localhost:1926';
+    
 
     const addLog = (message: string) => {
         setLogs(prevLogs => [message, ...prevLogs]);
@@ -93,7 +96,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
     const handleNextPlayer = () => {
         // Logic to move to the next player, for example, using a round-robin approach.
         if (online) {
-            axios.post(URL + '/next_player', {'id' : gameId}).then((response) => {
+            axios.post(API_URL + '/next_player', {'id' : gameId}).then((response) => {
                 const data = response.data;
                 const move = data.move;
                 addLog(`Round ${roundCount+1}: ` + `${players[currentPlayerIndex].name} played ${move.rank} of ${move.suit}.`);
@@ -123,7 +126,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
                 'suit' : currentPlayedCard.suit,
                 'rank' : currentPlayedCard.rank,
             }
-            axios.post(URL + '/play_card', requestData).then((response) => {
+            axios.post(API_URL + '/play_card', requestData).then((response) => {
                 // const data = response.data;
                 const statusCode = response.status;
                 if (statusCode === 400) {
@@ -148,7 +151,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
     const endOneRound = () => {
         // Figure out the largest of this round based on the played cards
         if (online) {
-            axios.post(URL + '/next_round', {'id' : gameId}).then((response) => {
+            axios.post(API_URL + '/next_round', {'id' : gameId}).then((response) => {
                 const data = response.data;
                 const largestIndex = data.largestIndex;
                 addLog(`Round ${roundCount+1}: ` + `${players[largestIndex].name} was largest. `);
@@ -180,7 +183,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
         // Episode end logic here
         // TODO: Implement Online version of this function
         console.log('Episode ended. New Game started.');
-        axios.get(URL + '/start_game')
+        axios.get(API_URL + '/start_game')
             .then(response => {
                 console.log(response.data);
                 fetchGameStates(response.data.id);
@@ -193,7 +196,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
     const fetchGameStates = async (id: String | null) => {
         try {
             setLoading(true); // Start loading
-            const response = await axios.post(URL + '/get_game_state', {'id' : id});
+            const response = await axios.post(API_URL + '/get_game_state', {'id' : id});
             // .then(response => {
             const game_state = response.data.game_state;
             setPlayers(game_state.players); // Update state with player data
@@ -214,7 +217,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
 
     if (online) {
         useEffect(() => {
-            axios.get(URL + '/start_game')
+            axios.get(API_URL + '/start_game')
             .then(response => {
                 console.log(response.data);
                 fetchGameStates(response.data.id);

@@ -4,15 +4,15 @@ import { View, Button, StyleSheet } from 'react-native';
 export default function IndexPage({ navigation }) {
   return (
     <View style={styles.container}>
-      <View style={styles.buttonContainer}>
+      {/* <View style={styles.buttonContainer}>
         <Button
           title="New Offline Game"
           onPress={() => navigation.navigate('GamePage')}
         />
-      </View>
+      </View> */}
       <View style={styles.buttonContainer}>
         <Button
-          title="New Online Game (for testing API)"
+          title="New Game"
           onPress={() => navigation.navigate('GameOnline')}
         />
       </View>
