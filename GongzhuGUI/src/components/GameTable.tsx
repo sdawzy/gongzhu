@@ -9,6 +9,7 @@ import Constants from 'expo-constants';
 interface GameTableProps {
   initialPlayers: PlayerInterface[]; // Array of arrays of cards for each player
   online: boolean; // Whether the game is being played online or not
+  ai: String; //
 };
 
 
@@ -24,7 +25,7 @@ const API_URL = Constants.expoConfig?.extra?.apiUrl;
 // console.log(Constants);
 // console.log("API_URL: "+ API_URL);
 
-const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
+const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "normal" }) => {
     const [players, setPlayers] = useState<PlayerInterface[]>(online ? [] : initialPlayers);  
     const [selectedPlayer, setSelectedPlayer] = useState<PlayerInterface | null>(null);
     const [selectedCard, setSelectedCard] = useState<CardInterface | null>(null);
@@ -181,11 +182,8 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
         }
     }
 
-    const endEpisode = () => {
-        // Episode end logic here
-        // TODO: Implement Online version of this function
-        console.log('Episode ended. New Game started.');
-        axios.get(API_URL + '/start_game')
+    const startGame = () => {
+        axios.post(API_URL + '/start_game', {"ai": ai})
             .then(response => {
                 console.log(response.data);
                 fetchGameStates(response.data.id);
@@ -193,6 +191,12 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
             .catch(error => {
                 console.error("There was an error starting the game!", error);
             });
+    }
+
+    const endEpisode = () => {
+        // Episode end logic here
+        console.log('Episode ended. New Game started.');
+        startGame();
     }
 
     const fetchGameStates = async (id: String | null) => {
@@ -219,14 +223,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online }) => {
 
     if (online) {
         useEffect(() => {
-            axios.get(API_URL + '/start_game')
-            .then(response => {
-                console.log(response.data);
-                fetchGameStates(response.data.id);
-            })
-            .catch(error => {
-                console.error("There was an error starting the game!", error);
-            });
+            startGame();
         }, []); 
     }
 

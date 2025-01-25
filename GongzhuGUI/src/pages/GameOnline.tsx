@@ -5,39 +5,31 @@ import Hand from '../components/Hand';
 import { CardInterface, PlayerInterface } from '../types';
 import GameTable from '../components/GameTable';
 // import {  } from '../types';
-// Helper function to generate a deck of cards
-const generateDeck = () => {
-  const suits = ['spade', 'heart', 'diamond', 'club'];
-  const ranks = ['02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14'];
-  let deck = [];
-
-  suits.forEach(suit => {
-    ranks.forEach(rank => {
-      deck.push({ suit, rank, id: `${suit}_${rank}` });
-    });
-  });
-
-  return deck;
-};
+// Helper function to generate a deck of card
 
 const GameOnline : React.FC = () => {
   const [gameStarted, setGameStarted] = useState<boolean>(false);
+  const [aiPolicy, setAiPolicy] = useState<String | null>(null);
 
   return (
     <View style={styles.container}>
-      {!gameStarted ? (
-        <View>        
-            <Hand 
-              hand={generateDeck()} 
-              rotation={0}
-              visible={false}
-            />
-            <Button title="Start Game" onPress={setGameStarted(()=>true)} />
+      {!aiPolicy ? (
+        // Select a AiPolicy
+        <View style={styles.container}>
+          <Text>Select Difficulty</Text>
+          <View style={styles.buttonContainer}>    
+            <Button title="Easy (AI plays randomly)" onPress={() => setAiPolicy('random')} />
+          </View>
+          <View style={styles.buttonContainer}>        
+              <Button title="Normal (AI knows some basic strategies)" onPress={() => setAiPolicy('greedy')} />
+          </View>
         </View>
+
       ) : (
         <GameTable 
           initialPlayers={[]} 
           online={true}
+          ai={aiPolicy}
         />
       )}
     </View>
@@ -55,12 +47,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     alignItems: 'center',
   },
+  buttonContainer: {
+    marginBottom: 16, // Add vertical spacing between buttons
+    width: '80%', // Optional: Set a consistent width for buttons
+  },
   container: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#f0f8ff',
   },
   title: {
     fontSize: 20,

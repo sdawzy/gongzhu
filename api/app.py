@@ -17,15 +17,25 @@ games : dict = {}
 def get_game_by_id(game_id):
     global games
     return games.get(game_id)
-    
-@app.route('/start_game', methods=['GET'])
+
+ai_policies = {
+    "random": RandomPolicy,
+    "greedy": GreedyPolicy,
+    # Add more AI policies as needed
+}
+@app.route('/start_game', methods=['POST'])
 def start_game_route():
+    # Get AI policy 
+    data : dict = request.json
+    ai_policy = data.get('ai')
     global games
     # game = GongzhuGame(ai_policy=RandomPolicy)
-    game = GongzhuGame(ai_policy=GreedyPolicy, db_dir=DB_DIR)
+    game = GongzhuGame(ai_policy=ai_policies[ai_policy], db_dir=DB_DIR)
     game.start_game()  # Start a new game
     games[game.get_id()] = game  # Store the game in the dictionary
     # print(games)
+
+
     return jsonify({'message': 'Game started successfully', 'id': game.get_id()}), 200
 
 @app.route('/get_game_state', methods=['POST'])
