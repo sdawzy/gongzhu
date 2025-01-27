@@ -374,11 +374,11 @@ class GongzhuGame:
         # Update the current player index
         self.current_player_index = (self.current_player_index + 1) % len(self.players)
         # Update the game history
-        self.add_history({
-            "round": self.round_count,
-            "playerIndex": old_player_index,
-            "move": move.to_dict(),
-        })
+        # self.add_history({
+        #     "round": self.round_count,
+        #     "playerIndex": old_player_index,
+        #     "move": move.to_dict(),
+        # })
         
         return {
             "currentPlayerIndex": old_player_index,
