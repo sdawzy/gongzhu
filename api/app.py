@@ -113,7 +113,8 @@ def next_round_route():
     return jsonify({'message': 'Next round starts', 'largestIndex': largest_index}), 200
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=1926)  # Run the Flask app
+    # app.run(debug=True, host='0.0.0.0', port=1926)  # Run the Flask app
+    app.run(debug=True)
 
 # option 1: json
 # option 2: sqlite
