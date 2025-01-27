@@ -21,9 +21,7 @@ const defaultAvatars = [
 ];
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
-// ? Constants.expoConfig?.extra?.apiUrl : "http://localhost:1926";
-// console.log(Constants);
-// console.log("API_URL: "+ API_URL);
+// const API_URL = "https://gongzhuapi.vercel.app";
 
 const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "normal" }) => {
     const [players, setPlayers] = useState<PlayerInterface[]>(online ? [] : initialPlayers);  
@@ -39,6 +37,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
     const [logs, setLogs] = useState<string[]>([]);
     const [isLogExpanded, setIsLogExpanded] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(online ? true : false);
+    const [started, setStarted] = useState<boolean>(false);
     const bottonTitle = "Show Cards & Declaration";
     const [error, setError] = useState<string | null>(null);
 
@@ -52,10 +51,10 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
     };
 
     const handleNextTurn = () => {
-        if (isEndEpisode) {
-            endEpisode();
-        } else if (isEndOneRound) {
+        if (isEndOneRound) {
             endOneRound();
+        } else if (isEndEpisode) {
+            endEpisode();
         } else if (isYourTurn) {
             handlePlaySelectedCard();
         } else {
@@ -187,6 +186,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
             .then(response => {
                 console.log(response.data);
                 fetchGameStates(response.data.id);
+                
             })
             .catch(error => {
                 console.error("There was an error starting the game!", error);
@@ -218,6 +218,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
             setError("Failed to load player data.");
         } finally {
             setLoading(false); // End loading
+            setStarted(true); // Game started
         }
     };
 
@@ -235,7 +236,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
         players[3].currentPlayedCard != null;
     } 
     // const isEndOneRound = false;
-    const isEndEpisode = roundCount === maxRounds;
+    const isEndEpisode = (roundCount === maxRounds && !isEndOneRound);
     const isYourTurn = (currentPlayerIndex === 0); // Assuming player 0 is at the bottom
     if (isEndOneRound && currentPlayerIndex != -1) {
         setCurrentPlayerIndex(-1);
@@ -256,9 +257,9 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
         };
     }, [players, selectedCard, currentPlayerIndex]);
 
-    if (loading) {
+    if (!started) {
         return (
-            <Text>Loading players...</Text>
+            <Text>Loading Game...</Text>
         );
     }
     return (
@@ -429,7 +430,9 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
             </View>
         </Modal>
             {/* Conditional Button */}
-            {isEndEpisode? 
+            {loading?
+             <Text>Loading...</Text> : 
+             isEndEpisode? 
                 <Button title="New Game (n)" onPress={handleNextTurn} /> : 
             isEndOneRound ? 
                 <Button title="End this Round (n)" onPress={handleNextTurn} /> : 
