@@ -245,7 +245,9 @@ class GongzhuGame:
     def save_histroy(self):
         # from dotenv import load_dotenv
         # import os
-
+        recordHistory = os.getenv('RECORD_HISTORY')
+        if recordHistory != 'True':
+            return
         # import edgedb
 
         # load_dotenv()
@@ -359,7 +361,7 @@ class GongzhuGame:
             self.current_player_index = -1
             # # Save the game history
             # print("Saving game history...")
-            # self.save_histroy()
+            self.save_histroy()
         else:
             self.first_player_index = largest_index
             self.current_player_index = largest_index

@@ -9,7 +9,7 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-DB_DIR = os.path.join("data/record.db")
+DB_DIR = "data/record.db"
 # A dictionary to store ongoing games
 games : dict = {}
 # game : GongzhuGame = GongzhuGame(ai_policy=RandomPolicy)  # Initialize your game
@@ -114,7 +114,7 @@ def next_round_route():
 
 if __name__ == '__main__':
     # app.run(debug=True, host='0.0.0.0', port=1926)  # Run the Flask app
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0')
 
 # option 1: json
 # option 2: sqlite
