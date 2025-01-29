@@ -243,7 +243,17 @@ class GongzhuGame:
         return self.history
 
     def save_histroy(self):
-        # Connect to the database
+        # from dotenv import load_dotenv
+        # import os
+
+        # import edgedb
+
+        # load_dotenv()
+
+        # secret_key = os.getenv("EDGEDB_SECRET_KEY")
+        # instance = os.getenv("EDGEDB_INSTANCE")
+        # # Connect to the database
+        # client = edgedb.create_client(instance, secret_key=secret_key)
         conn = sqlite3.connect(self.db_dir)
         cursor = conn.cursor()
         
@@ -349,7 +359,7 @@ class GongzhuGame:
             self.current_player_index = -1
             # # Save the game history
             # print("Saving game history...")
-            # self.save_histroy()
+            self.save_histroy()
         else:
             self.first_player_index = largest_index
             self.current_player_index = largest_index
