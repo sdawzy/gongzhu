@@ -27,7 +27,7 @@ class Card:
         if value is not None:
             assert value >= 0 or value < SUITE_SIZE, \
                 "Value of a card must be between 0 and 52."  
-            self.vec = one_hot_vector(length=SUITE_SIZE, location=value)
+            self.vec = one_hot_vector(length=SUITE_SIZE, value=value)
             return
         if rank not in RANKS:
             raise ValueError(f"Invalid rank: {rank}")
@@ -36,7 +36,7 @@ class Card:
         suit_index = SUITS.index(suit)
         rank_index = RANKS.index(rank)
         value = suit_index * len(RANKS) + rank_index
-        self.vec = one_hot_vector(length=SUITE_SIZE, location=value)
+        self.vec = one_hot_vector(length=SUITE_SIZE, value=value)
     
     @property
     def rank(self) -> str:
@@ -44,7 +44,7 @@ class Card:
     
     @property
     def suit(self) -> str:
-        return SUITS[self.value // len(RANKS)]
+        return SUITS[self.value // len(SUITS)]
 
     @property
     def value(self) -> int:
@@ -54,7 +54,7 @@ class Card:
         return f"{self.suit}_{self.rank}"
 
     def __eq__(self, other):
-        assert isinstance(other, Card ), "other must be Card"
+        assert isinstance(other,"Card"), "other must be Card"
         return self.value == other.value
 
     def __hash__(self):
@@ -77,9 +77,6 @@ class Card:
     def get_suit(self) -> str:
         return self.suit
     
-    def get_vec(self) -> np.array:
-        return self.vec
-
     def get_rank(self) -> str:
         return self.rank
 
@@ -121,7 +118,7 @@ class CardCollection:
         return self
 
     def __next__(self):
-        if self.index < self.size:
+        if self.index < self.vec.sum():
             result = self.cards[self.index]
             self.index += 1
             return result
@@ -143,7 +140,7 @@ class CardCollection:
             self.vec += card.vec
 
     # Add a list of cards to the collection
-    def add_cards(self, card_list : List[Card]) :
+    def add_cards(self, card_list : List(Card)) :
         if card_list is not None:
             for card in card_list:
                 self.add_card(card)
@@ -179,23 +176,11 @@ class CardCollection:
         new_vec = self.vec + other.get_vec()
         return CardCollection(vec=new_vec)
     
-    def __iadd__(self, other) -> "CardCollection":
-        if not isinstance(other, CardCollection) and not isinstance(other, Card):
-            raise TypeError("Can only subtract CardCollection from CardCollection")
-        self.vec += other.get_vec()
-        return self
-        
     def __sub__(self, other) -> "CardCollection":
         if not isinstance(other, CardCollection) and not isinstance(other, Card):
             raise TypeError("Can only subtract CardCollection from CardCollection")
         new_vec = self.vec - other.get_vec()
         return CardCollection(vec=new_vec)
-    
-    def __isub__(self, other) -> "CardCollection":
-        if not isinstance(other, CardCollection) and not isinstance(other, Card):
-            raise TypeError("Can only subtract CardCollection from CardCollection")
-        self.vec -= other.get_vec()
-        return self
 
     def is_empty(self):
         return self.size == 0
@@ -250,8 +235,8 @@ class CardCollection:
 
 class Deck(CardCollection):
     # Constructor to initialize a standard 52-card deck
-    def shuffle(self):
-        return
+    # def shuffle(self):
+    #     random.shuffle(self.cards)
 
     def __init__(self):
         super().__init__()  # Call parent constructor
@@ -264,7 +249,6 @@ class Deck(CardCollection):
     def deal_card(self) -> Card:
         card = self.get_one_random_card()
         self -= card
-        print(f"Dealt {card}. Current size is {self.size}")
         return card
 
 

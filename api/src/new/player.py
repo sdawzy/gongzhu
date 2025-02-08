@@ -30,6 +30,10 @@ class Player:
         # """Get the player's name."""
         # return self.name
 
+    # @property
+    # def score(self):
+    #     """Get the player's score."""
+    #     return self.env.calc_score(self._collectedCards)
     # reset player data
     def reset(self):
         self._hand = Hand()
@@ -108,19 +112,6 @@ class Player:
     def add_card_to_played_cards(self, card):
         self._playedCards.add_card(card)
 
-    # def play_last_card(self):
-    #     """
-    #     Play the last card from the player's hand.
-        
-    #     :return: The last card in the hand.
-    #     :raises ValueError: If the player has no cards to play.
-    #     """
-    #     if self._hand.size == 0:
-    #         raise ValueError(f"{self.name} has no cards to play!")
-    #     card_played = self._hand.remove_last_card()
-    #     self.set_current_played_card(card_played)
-    #     return card_played
-
     def play_specific_card(self, card : Card):
         """
         Play a specific card from the player's hand.
@@ -129,7 +120,7 @@ class Player:
         :return: The played card.
         :raises ValueError: If the card is not in the player's hand or if the hand is empty.
         """
-        if self._hand.size == 0 or not self._hand.contains(card):
+        if self._hand.size() == 0 or not self._hand.contains(card):
             raise ValueError(f"{self.name} has no cards to play!")
 
         self.set_current_played_card(card) 
@@ -155,7 +146,7 @@ class Player:
 
     def get_collected_cards_size(self):
         """Get the size of the player's collected cards."""
-        return self._collectedCards.size
+        return self._collectedCards.size()
 
     def show_collected_cards(self):
         """Display the player's collected cards."""
