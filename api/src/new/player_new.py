@@ -1,50 +1,45 @@
+# Vectorized version of the player class
+# By Yue Zhang, Feb 11, 2025
 from .card import Card, CardCollection, Hand
-
 from typing import List, TYPE_CHECKING
 # from flask import jsonify
 if TYPE_CHECKING:
-    from env import Env
+    from env_new import Gongzhu
 
 class Player:
-    def __init__(self, 
-        id: str, name : str, avatar_url: str):
-        """
-        Constructor to initialize a player.
-        
-        :param name: The name of the player.
-        """
+    def __init__(self, env : Gongzhu,
+        id: str = None, name : str = None, avatar_url: str = None):
+        self.env = env
+
         self.id = id
-        self.name = name
+        self.name = name 
         self.avatar_url = avatar_url
 
         self._hand = Hand()
-        self._collectedCards = CardCollection()  # Anonymous subclass not required in Python
+        self._collectedCards = CardCollection()  
 
-        self._playedCards = CardCollection()  # Anonymous subclass not required in Python
-        self._currentPlayedCard : Card = None  # Anonymous subclass not required in Python
+        self._playedCards = CardCollection()  
+        self._currentPlayedCard : Card = None  
 
-        self._score = 0  # Anonymous subclass not required in Python
-        self._closeDeclaredCards = CardCollection() # Anonymous subclass not required in Python
-        self._openDeclaredCards = CardCollection() # Anonymous subclass not required in Python
+        self._score = 0 
+        self._closeDeclaredCards = CardCollection() 
+        self._openDeclaredCards = CardCollection()
 
-        # """Get the player's name."""
-        # return self.name
+    @property
+    def score(self):
+        """Get the player's score."""
+        return self.env.calc_score(self._collectedCards)
 
-    # @property
-    # def score(self):
-    #     """Get the player's score."""
-    #     return self.env.calc_score(self._collectedCards)
     # reset player data
     def reset(self):
         self._hand = Hand()
-        self._collectedCards = CardCollection()  # Anonymous subclass not required in Python
+        self._collectedCards = CardCollection()  
+        self._playedCards = CardCollection()  
+        self._currentPlayedCard : Card = None  
 
-        self._playedCards = CardCollection()  # Anonymous subclass not required in Python
-        self._currentPlayedCard : Card = None  # Anonymous subclass not required in Python
-
-        self._score = 0  # Anonymous subclass not required in Python
-        self._closeDeclaredCards = CardCollection() # Anonymous subclass not required in Python
-        self._openDeclaredCards = CardCollection() # Anonymous subclass not required in Python
+        self._score = 0  
+        self._closeDeclaredCards = CardCollection() 
+        self._openDeclaredCards = CardCollection() 
     
     # Get methods
     def get_id(self):
@@ -153,7 +148,7 @@ class Player:
         self._collectedCards.sort()
         self._collectedCards.show(f"{self.name}'s Collected Cards")
 
-    def get_score(self, env : 'Env'):
+    def get_score(self, env : 'Gongzhu'):
         """
         Calculate the player's score using the environment rules.
         
@@ -163,7 +158,7 @@ class Player:
         self._score = env.calc_score(self._collectedCards)
         return self._score
 
-    def get_legal_moves(self, env : 'Env', played_cards : CardCollection) -> CardCollection:
+    def get_legal_moves(self, env : 'Gongzhu', played_cards : CardCollection) -> CardCollection:
         """
         Get the legal moves for the player based on the environment and played cards.
         

@@ -2,7 +2,7 @@ from typing import List, TYPE_CHECKING
 from ..card import Card, CardCollection
 from ..card import PIG, SHEEP, DOUBLER, BLOOD, PIGPEN, SHEEPPEN, DOUBLERCATCHER
 from ..card import SAFESPADE, SAFECLUB, SAFEDIAMOND
-from ..player import Player
+from ..player_new import Player
 if TYPE_CHECKING:
     from env import Env
 
