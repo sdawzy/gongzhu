@@ -1,6 +1,6 @@
 from typing import List, TYPE_CHECKING
 from ..card import Card, CardCollection
-from ..player import Player
+from ..player_new import Player
 from .policy import Policy
 if TYPE_CHECKING:
     from env import Env

@@ -1,6 +1,8 @@
 # Vectorized version of the player class
 # By Yue Zhang, Feb 11, 2025
+import numpy as np
 from .card import Card, CardCollection, Hand
+from policy import Policy, RandomPolicy
 from typing import List, TYPE_CHECKING
 # from flask import jsonify
 if TYPE_CHECKING:
@@ -8,22 +10,38 @@ if TYPE_CHECKING:
 
 class Player:
     def __init__(self, env : Gongzhu,
-        id: str = None, name : str = None, avatar_url: str = None):
+        policy : Policy = RandomPolicy,
+        id: str = None, 
+        name : str = None, 
+        avatar_url: str = None,
+        rating : float = None):
+
         self.env = env
+        self.policy = policy
 
         self.id = id
         self.name = name 
         self.avatar_url = avatar_url
 
+        # 52 x 1 vector representing the hand
         self._hand = Hand()
+        # 52 x 1 vector representing the cards collected
         self._collectedCards = CardCollection()  
 
+        # 52 x 1 vector representing the cards played
         self._playedCards = CardCollection()  
+        # 52 x 1 one-hot / empty vector representing the current playing card
         self._currentPlayedCard : Card = None  
+        # 52 x 1 vector representing the close-declared cards 
+        self._closeDeclaredCards = CardCollection() 
+        # 52 x 1 vector representing the close-declared cards 
+        self._openDeclaredCards = CardCollection()
 
         self._score = 0 
-        self._closeDeclaredCards = CardCollection() 
-        self._openDeclaredCards = CardCollection()
+
+        self.rating = 1500
+        if self.rating is not None:
+            self.rating = rating
 
     @property
     def score(self):
@@ -166,7 +184,7 @@ class Player:
         :param played_cards: The list of cards already played.
         :return: A CardCollection of legal moves.
         """
-        return env.legal_moves(self._hand, played_cards)
+        return Gongzhu.legal_moves(self._hand, played_cards)
 
     def set_current_played_card(self, card : Card):
         self._currentPlayedCard = card
@@ -187,3 +205,16 @@ class Player:
             'openDeclaredCards': self._openDeclaredCards.to_list(),
             'score': self._score
         }
+    
+    # Vectorized (matrix) representation of a player
+    # Currently, it is a 52 x 6 matrix
+    @property
+    def vec(self) -> np.array:
+        return np.array( 
+            self._hand,
+            self._collectedCards,
+            self._playedCards,
+            self._currentPlayedCard,
+            self._closeDeclaredCards,
+            self._openDeclaredCards
+        )

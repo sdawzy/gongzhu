@@ -28,7 +28,7 @@ class Card:
         if value is not None:
             assert value >= 0 or value < SUITE_SIZE, \
                 "Value of a card must be between 0 and 52."  
-            self.vec = one_hot_vector(length=SUITE_SIZE, location=value)
+            self.vec : np.array = one_hot_vector(length=SUITE_SIZE, location=value)
             return
         if rank not in RANKS:
             raise ValueError(f"Invalid rank: {rank}")

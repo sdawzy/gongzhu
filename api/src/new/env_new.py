@@ -2,13 +2,16 @@
 # By Yue Zhang, Feb 11, 2025
 from .card import Hand, Card, CardCollection, Deck
 from .player_new import Player
-from typing import List, TYPE_CHECKING
+from typing import List, TYPE_CHECKING, Any, Generic, SupportsFloat
 from .policy import Policy, RandomPolicy
+from random import Random
 import gymnasium as gym
+from gymnasium import ObsType, ActType, RenderFrame
 import secrets
 import sqlite3
 import json
 import os
+import numpy as np
 
 DB_DIR = os.path.join("/data/record.db")
 
@@ -16,7 +19,7 @@ DB_DIR = os.path.join("/data/record.db")
 
 # Class of Gongzhu game using gym.Env
 class Gongzhu(gym.Env):
-        # Define 4 important cards
+    # Define 4 important cards
     PIG = Card("12", "spade")
     SHEEP = Card("11", "diamond")
     DOUBLER = Card("10", "club")
@@ -56,21 +59,31 @@ class Gongzhu(gym.Env):
 
     def __init__(self, 
             render_mode=None, 
-            init_state=None, 
-            goal=None,
-            ai_policy: Policy = RandomPolicy, 
             enable_declaration : bool = False,
             n_players : int = 4):
         # A random unique identifier
         self.id : str = secrets.token_hex(16)
 
         # Meta information related to Gongzhu
-        self._n_actions = 52 
+        self._n_actions : int = 52 
         # 4 players by default. If I have time, I will implement 3 players version
-        self._n_players = n_players 
+        self._n_players : int = n_players 
         # 13 rounds for 4 players version
-        self._max_rounds = 13
-        self._round_count = 0
+        self._max_rounds : int = 13
+        self._round_count : int = 0
+
+        # Observation and action spaces
+        action_space = gym.spaces.Discrete(self._n_actions)
+
+        # Observation space consists of 
+        # 1. Information of the agent player (players[0])
+        # 2. Other players' information (players[1:4])
+        # 3. Game history (List of 52 x 1 one-hot vectors)
+        # 4. Other meta information ?
+        # observation_space = gym.spaces.Dict(
+        #     {"agent_info": Box(-1, 1, shape=(2,)), 
+        #     "color": Discrete(3)}, 
+        # )
 
         # Initialize the effects of each special card
         self._pig_effect : float = 1.0
@@ -78,26 +91,26 @@ class Gongzhu(gym.Env):
         self._doubler_effect : float = 1.0
         self._blood_effect : float = 1.0
 
-        self._current_player_index = 0  # Index of the current player in this round
+        self._current_player_index : int = 0  # Index of the current player in this round
         # Intialize players
-        self._players : List[Player] = [
-            Player(id="You", name="You", avatar_url="avatar_url1"),
-            Player(id="Panda", name="Panda", avatar_url="avatar_url2"),
-            Player(id="Penguin", name="Penguin", avatar_url="avatar_url3"),
-            Player(id="Elephant", name="Elephant", avatar_url="avatar_url4"),
-        ]
+        self._players : List[Player] = []
+
         # Policy for AI players
-        self._ai_policy : Policy = ai_policy(self)
+        # self._ai_policy : Policy = ai_policy(self)
         self._playedCardsThisRound : List[Card] = [] # List of cards played this round
 
         # Game history information
-        self._history = []
+        self._history : List[np.array] = []
+
+        # Scores of both teams
+        self._my_team_score : int = 0
+        self._opponent_team_score : int = 0
 
         # Whether declaration is enabled or not
         self._enable_declaration = enable_declaration
-        
+
         # Start the game
-        self.start()
+        # self.start()
 
     # Start the game
     def start(self):
@@ -108,13 +121,21 @@ class Gongzhu(gym.Env):
             for _ in range(13):
                 player.add_card_to_hand(deck.deal_card())
             player.sort_hand()
-
+        # Initialize the effects of each special card
+        self._pig_effect : float = 1.0
+        self._sheep_effect : float = 1.0
+        self._doubler_effect : float = 1.0
+        self._blood_effect : float = 1.0
+        # Reset round counts
         self._round_count = 0
         self._playedCardsThisRound = []
         # Figure out the first player initially
-        self.first_player_index = self._who_goes_first_initial(self._players)
-        self.current_player_index = self.first_player_index
+        self._first_player_index = self._who_goes_first_initial(self._players)
+        self._current_player_index = self._first_player_index
         
+        # Clear scores of both teams
+        self._my_team_score : int = 0
+        self._opponent_team_score : int = 0
         # Initialize the game history
         self.history = []
 
@@ -144,6 +165,7 @@ class Gongzhu(gym.Env):
         return index
 
     # Calculate the score based on a hand
+    # TODO: rewrite using matrix operations
     def calc_score(self, collected_cards : CardCollection) -> int:
         score = 0
         has_pig = False
@@ -202,11 +224,10 @@ class Gongzhu(gym.Env):
                 return i
         raise f"No Player has {self.FIRST_CARD} in this game."
     
-        # Check if a move is legal for this round
+    # Check if a move is legal for this round
     def is_legal_move(self, player : Player, card : Card) -> bool:
-        legal_moves = self.legal_moves(player.get_hand(), self.playedCardsThisRound)
+        legal_moves = self.legal_moves(player.get_hand(), self._playedCardsThisRound)
         return legal_moves.contains(card)
-
 
     def next_round(self):
         # Sanity check: ensure each player has exactly same number of cards
@@ -218,30 +239,27 @@ class Gongzhu(gym.Env):
         # Increase the round count by 1
         self._round_count += 1
         # Find the index of largest player
-        largest_index = (self.first_player_index + self.find_largest_index(self.playedCardsThisRound)) % len(self.players)
+        largest_index = (self._first_player_index + self.find_largest_index(self._playedCardsThisRound)) % len(self.players)
         # The largest player collects all the cards played this round
-        self._players[largest_index].add_collected_cards(self.playedCardsThisRound)
+        self._players[largest_index].add_collected_cards(self._playedCardsThisRound)
         self._players[largest_index].sort_collected_cards()
         # Empty the currentPlayedCard of players
         for player in self._players:
             player.remove_current_played_card()
         # Empty the played cards of this round
-        self.playedCardsThisRound = []
+        self._playedCardsThisRound = []
         # Update the current player index
         if (self.is_end_episode()):
-            self.first_player_index = -1
-            self.current_player_index = -1
+            self._first_player_index = -1
+            self._current_player_index = -1
             # # Save the game history
             # print("Saving game history...")
             self.save_histroy()
         else:
-            self.first_player_index = largest_index
-            self.current_player_index = largest_index
+            self._first_player_index = largest_index
+            self._current_player_index = largest_index
         
-        self.add_history({
-            "round": self._round_count,
-            "largestIndex": largest_index,
-        })
+        # self.add_history()
 
         return {
             "largestIndex": largest_index,
@@ -250,19 +268,18 @@ class Gongzhu(gym.Env):
         
     def next_player(self):
         # Play a card based on the policy
-        old_player_index = self.current_player_index
-        legal_moves = self.legal_moves(self._players[self.current_player_index].get_hand(), self.playedCardsThisRound)
-        move : Card = self._ai_policy.decide_action(legal_moves=legal_moves, game_info=self.to_dict())
-        self.playedCardsThisRound.append(move)
-        self._players[self.current_player_index].play_specific_card(move)
+        old_player_index = self._current_player_index
+        legal_moves = self.legal_moves(self._players[self._current_player_index].get_hand(), self._playedCardsThisRound)
+        move : Card = self._players[self._current_player_index].policy.decide_action(
+            legal_moves=legal_moves, 
+            game_info=self.to_dict()
+        )
+        self._playedCardsThisRound.append(move)
+        self._players[self._current_player_index].play_specific_card(move)
         # Update the current player index
-        self.current_player_index = (self.current_player_index + 1) % self._n_players
+        self._current_player_index = (self._current_player_index + 1) % self._n_players
         # Update the game history
-        self.add_history({
-            "round": self._round_count,
-            "playerIndex": old_player_index,
-            "move": move.to_dict(),
-        })
+        self.add_history(move.vec)
         
         return {
             "currentPlayerIndex": old_player_index,
@@ -271,11 +288,11 @@ class Gongzhu(gym.Env):
 
     def play_selected_card(self, card : Card):
         # Check if the current player can play this card
-        if self.is_legal_move(self._players[self.current_player_index], card):
-            self.playedCardsThisRound.append(card)
-            self._players[self.current_player_index].play_specific_card(card)
+        if self.is_legal_move(self._players[self._current_player_index], card):
+            self._playedCardsThisRound.append(card)
+            self._players[self._current_player_index].play_specific_card(card)
             # Update the current player index
-            self.current_player_index = (self.current_player_index + 1) % len(self.players)
+            self._current_player_index = (self._current_player_index + 1) % len(self.players)
             # Update the game history
             self.history.append({
                 "round": self._round_count,
@@ -294,14 +311,18 @@ class Gongzhu(gym.Env):
     def is_end_episode(self):
         return self._round_count >= self._max_rounds
 
+    @property
+    def to_state(self):
+        return self.to_dict()
+
     def to_dict(self) -> dict:
         return {
             "id": self.id,
             "aiPolicy": str(self._ai_policy),
             "players": [player.to_dict() for player in self._players],
             "roundCount": self._round_count,
-            "firstPlayerIndex": self.first_player_index,
-            "currentPlayerIndex": self.current_player_index,
+            "firstPlayerIndex": self._first_player_index,
+            "currentPlayerIndex": self._current_player_index,
             "cardsPlayedThisRound": [card.to_dict() for card in self._playedCardsThisRound],
             "isEndEpisode": self.is_end_episode,
         }
@@ -310,25 +331,22 @@ class Gongzhu(gym.Env):
         self.start()
         
     def get_current_player_index(self) -> int:
-        return self.current_player_index
+        return self._current_player_index
     
     def get_first_player_index(self) -> int:
-        return self.first_player_index
-
-    def is_end_episode(self) -> bool:
-        return self.round_count >= self.env.max_round
+        return self._first_player_index
 
     def is_your_turn(self) -> bool:
-        return self.current_player_index == 0
+        return self._current_player_index == 0
     
     def is_end_one_round(self) -> bool:
-        return len(self.playedCardsThisRound) >= 4
+        return len(self._playedCardsThisRound) >= 4
 
     def end_episode(self):
         return self.to_dict()
 
-    def add_history(self, record : dict):
-        self.history.append(record)
+    def add_history(self, move : np.array) -> None:
+        self.history.append(move)
     
     def save_histroy(self) -> None:
         # TODO: Implement saving game history
@@ -338,8 +356,31 @@ class Gongzhu(gym.Env):
         -> tuple[ObsType, SupportsFloat, bool, bool, dict[str, Any]]:
         return super().step(action)
     
-    def reset(self) -> ObsType:
-        return super().reset()
+    def reset(self, ai_players : List[Player] = [],
+        seed=None) -> ObsType:
+        assert len(ai_players) == 0 or len(ai_players) == 4, "Please specify exactly four players. The first player is you."
+        # If the ai players are not specified, 
+        if len(ai_players) == 0:
+            self._players = [
+                Player(id="You", name="You", avatar_url="avatar_url1", policy=RandomPolicy),
+                Player(id="Panda", name="Panda", avatar_url="avatar_url2", policy=RandomPolicy),
+                Player(id="Penguin", name="Penguin", avatar_url="avatar_url3", policy=RandomPolicy),
+                Player(id="Elephant", name="Elephant", avatar_url="avatar_url4", policy=RandomPolicy),
+            ]
+        else:
+            self._players =  ai_players
+
+        if seed is not None:
+            Random.seed(seed)
+        
+        # Reset player data (other than ratings)
+        for player in self._players:
+            player.reset()
+
+        # Reset game data by restarting the game
+        self.start()
+
+        return self.to_state, {}
     
     def render(self, mode='human'):
         pass
@@ -348,173 +389,56 @@ class Gongzhu(gym.Env):
         pass
     
 
-class GongzhuGame:
-    def __init__(self, ai_policy : Policy = RandomPolicy, db_dir=None):
-        import secrets
-        # A random unique identifier
-        self.id : str = secrets.token_hex(16)
 
-        self.env = Gongzhu()
-        self.round_count = 0
-        self.first_player_index = 0  # Index of the player who played first in this round
-        self.current_player_index = 0  # Index of the current player in this round
-        self.players : List[Player] = [
-            Player(id="You", name="You", avatar_url="avatar_url1"),
-            Player(id="Panda", name="Panda", avatar_url="avatar_url2"),
-            Player(id="Penguin", name="Penguin", avatar_url="avatar_url3"),
-            Player(id="Elephant", name="Elephant", avatar_url="avatar_url4"),
-        ]
-        # Policy for AI players
-        self.ai_policy = ai_policy(self.env)
-        self.playedCardsThisRound : List[Card] = [] # List of cards played this round
 
-        # Game history information
-        self.history = []
 
-        # Database directory for storing game history
-        self.db_dir = DB_DIR if db_dir is None else db_dir
 
-        # 
-        self.allow_declarations = False
 
-    def get_id(self):
-        return self.id
 
-    def get_round_count(self):
-        return self.round_count
 
-    def inc_round_count(self):
-        self.round_count += 1
+
+# If I have time, I would like to implement the full version of Gongzhu
+# class GongzhuGameMultiround(Gongzhu):
+#     def __init__(self, threshold = 1000, ai_policy : Policy = RandomPolicy, db_dir=None):
+#         super().__init__(ai_policy, db_dir)
+
+#         self.episode_count = 1
+
+#         self.threshold = threshold
+#         # You and player[2]
+#         self.team1_scores : List[int] = []
+#         # player[1] and player[3]
+#         self.team2_scores : List[int] = []
     
-    def to_dict(self) -> dict:
-        # Calculate scores for each player
-        for player in self.players:
-            player.get_score(self.env)
-        return {
-            "id": self.id,
-            "aiPolicy": str(self.ai_policy),
-            "players": [player.to_dict() for player in self.players],
-            "roundCount": self.round_count,
-            "firstPlayerIndex": self.first_player_index,
-            "currentPlayerIndex": self.current_player_index,
-            "cardsPlayedThisRound": [card.to_dict() for card in self.playedCardsThisRound],
-            "isEndEpisode": self.is_end_episode(),
-            "isYourTurn": self.is_your_turn(),
-            "isEndOneRound": self.is_end_one_round(),
-        }
+#     def new_episode(self):
 
-    def get_history(self) -> List[dict]:
-        return self.history
+#         self.episode_count += 1
+#         self.team1_scores.append(self.players[0].get_score() + self.players[2].get_score())
+#         self.team1_scores.append(self.players[1].get_score() + self.players[3].get_score())
 
-    def save_histroy(self):
-        # from dotenv import load_dotenv
-        # import os
-        recordHistory = os.getenv('RECORD_HISTORY')
-        if recordHistory != 'True':
-            return
-        # import edgedb
-
-        # load_dotenv()
-
-        # secret_key = os.getenv("EDGEDB_SECRET_KEY")
-        # instance = os.getenv("EDGEDB_INSTANCE")
-        # # Connect to the database
-        # client = edgedb.create_client(instance, secret_key=secret_key)
-        conn = sqlite3.connect(self.db_dir)
-        cursor = conn.cursor()
+#         # Reset player data
+#         for player in self.players:
+#             player.reset()
         
-        # Create a table with a JSON column
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS data (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                game_id TEXT,
-                ai_policy TEXT,
-                allow_declarations BOOLEAN,
-                history TEXT
-            )
-        ''')
-        conn.commit()
+#         # Start a new game
+#         return self.start()
 
-        # Save the game state to the database
-        game_id = self.get_id()
-        ai_policy = str(self.ai_policy)
-        allow_declarations = self.allow_declarations
-        history = json.dumps(self.get_history())
-        cursor.execute('INSERT INTO data (game_id, ai_policy, allow_declarations, history) VALUES (?, ?, ?, ?)', 
-            (game_id, ai_policy, allow_declarations, history))
-        
-        conn.commit()
-        conn.close()
-    
-    def get_game_state(self) -> dict:
-        return self.to_dict()
-
-    def start(self):
-        # First, deal cards to players
-        deck = Deck()
-        deck.shuffle()
-        for player in self.players:
-            for _ in range(13):
-                player.add_card_to_hand(deck.deal_card())
-            player.sort_hand()
-
-        self.round_count = 0
-        self.playedCardsThisRound = []
-        # Figure out the first player initially
-        self.first_player_index = self.env.who_goes_first_initial(self.players)
-        self.current_player_index = self.first_player_index
-        
-        # Initialize the game history
-        self.history = []
-
-        return self.to_dict()
-    
-
-
-
-
-
-class GongzhuGameMultiround(GongzhuGame):
-    def __init__(self, threshold = 1000, ai_policy : Policy = RandomPolicy, db_dir=None):
-        super().__init__(ai_policy, db_dir)
-
-        self.episode_count = 1
-
-        self.threshold = threshold
-        # You and player[2]
-        self.team1_scores : List[int] = []
-        # player[1] and player[3]
-        self.team2_scores : List[int] = []
-    
-    def new_episode(self):
-
-        self.episode_count += 1
-        self.team1_scores.append(self.players[0].get_score() + self.players[2].get_score())
-        self.team1_scores.append(self.players[1].get_score() + self.players[3].get_score())
-
-        # Reset player data
-        for player in self.players:
-            player.reset()
-        
-        # Start a new game
-        return self.start()
-
-    def to_dict(self) -> dict:
-        # Calculate scores for each player
-        for player in self.players:
-            player.get_score(self.env)
-        return {
-            "id": self.id,
-            "aiPolicy": str(self.ai_policy),
-            "players": [player.to_dict() for player in self.players],
-            "roundCount": self.round_count,
-            "firstPlayerIndex": self.first_player_index,
-            "currentPlayerIndex": self.current_player_index,
-            "cardsPlayedThisRound": [card.to_dict() for card in self.playedCardsThisRound],
-            "isEndEpisode": self.is_end_episode(),
-            "isYourTurn": self.is_your_turn(),
-            "isEndOneRound": self.is_end_one_round(),
-            "episode": self.episode_count,
-            "team1Scores": self.team1_scores,
-            "team2Scores": self.team2_scores,
-        }
+#     def to_dict(self) -> dict:
+#         # Calculate scores for each player
+#         for player in self.players:
+#             player.get_score(self.env)
+#         return {
+#             "id": self.id,
+#             "aiPolicy": str(self.ai_policy),
+#             "players": [player.to_dict() for player in self.players],
+#             "roundCount": self.round_count,
+#             "firstPlayerIndex": self.first_player_index,
+#             "currentPlayerIndex": self.current_player_index,
+#             "cardsPlayedThisRound": [card.to_dict() for card in self.playedCardsThisRound],
+#             "isEndEpisode": self.is_end_episode(),
+#             "isYourTurn": self.is_your_turn(),
+#             "isEndOneRound": self.is_end_one_round(),
+#             "episode": self.episode_count,
+#             "team1Scores": self.team1_scores,
+#             "team2Scores": self.team2_scores,
+#         }

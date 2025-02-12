@@ -1,7 +1,7 @@
 from typing import List, TYPE_CHECKING
 from ..card import Card, CardCollection
 from ..card import PIG, SHEEP, DOUBLER, PIGPEN
-from ..player import Player
+from ..player_new import Player
 from .policy import Policy
 from random import random
 if TYPE_CHECKING:
