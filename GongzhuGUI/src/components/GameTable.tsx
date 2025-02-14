@@ -20,7 +20,7 @@ const defaultAvatars = [
     require('../../assets/images/avatars/Elephant.png')
 ];
 
-const API_URL = Constants.expoConfig?.extra?.apiUrl;
+
 // const API_URL = "https://gongzhuapi.vercel.app";
 
 const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "normal" }) => {
@@ -40,8 +40,8 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
     const [started, setStarted] = useState<boolean>(false);
     const bottonTitle = "Show Cards & Declaration";
     const [error, setError] = useState<string | null>(null);
-
-
+    // const API_URL = Constants.expoConfig?.extra?.apiUrl;
+    const API_URL = "http://0.0.0.0:1926";
     const addLog = (message: string) => {
         setLogs(prevLogs => [message, ...prevLogs]);
     }
@@ -50,9 +50,11 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
         setIsLogExpanded(!isLogExpanded);
     };
 
+    console.log(API_URL);
     const handleNextTurn = () => {
         if (isEndOneRound) {
             endOneRound();
+            return;
         } else if (isEndEpisode) {
             endEpisode();
         } else if (isYourTurn) {
@@ -150,36 +152,75 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
         }
     };
 
-    const endOneRound = () => {
-        // Figure out the largest of this round based on the played cards
-        if (online) {
-            axios.post(API_URL + '/next_round', {'id' : gameId}).then((response) => {
+    // const endOneRound = () => {
+    //     // Figure out the largest of this round based on the played cards
+    //     if (online) {
+    //         axios.post(API_URL + '/next_round', {'id' : gameId}).then((response) => {
+    //             const data = response.data;
+    //             const largestIndex = data.largestIndex;
+    //             addLog(`Round ${roundCount+1}: ` + `${players[largestIndex].name} was largest. `);
+    //             fetchGameStates(gameId);
+    //             // setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
+    //         }).catch((error) => {
+    //             console.error('Error fetching next round: ', error);
+    //         });
+    //     }
+    //     setRoundCount((prevCount) => prevCount + 1);
+    //     let largestIndex = Math.floor(Math.random() * 4);
+    //     for (let i = 0; i < players.length; i++) {
+    //         players[largestIndex].collectedCards.push(players[i].currentPlayedCard);
+    //         players[i].currentPlayedCard = null;
+    //     }
+    //     // If not reaching the maximum rounds, move to the next player
+    //     if ( roundCount < maxRounds) {
+    //         setCardsPlayedThisRound([]);
+    //         setFirstPlayerIndex(largestIndex);
+    //         setCurrentPlayerIndex(largestIndex);
+    //         console.log(`Round ${roundCount+1} ended.`);
+    //     } else {
+    //         setFirstPlayerIndex(-1);
+    //         setCurrentPlayerIndex(-1);
+    //     }
+    // }
+
+    const endOneRound = async () => {
+        try {
+            // Figure out the largest of this round based on the played cards
+            let largestIndex;
+            if (online) {
+                const response = await axios.post(API_URL + '/next_round', { 'id': gameId });
                 const data = response.data;
-                const largestIndex = data.largestIndex;
-                addLog(`Round ${roundCount+1}: ` + `${players[largestIndex].name} was largest. `);
-                fetchGameStates(gameId);
-                // setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
-            }).catch((error) => {
-                console.error('Error fetching next round: ', error);
-            });
+                largestIndex = data.largestIndex;
+    
+                addLog(`Round ${roundCount + 1}: ` + `${players[largestIndex].name} was largest.`);
+                await fetchGameStates(gameId); // Ensure the game state is fetched before proceeding
+            } else {
+                largestIndex = Math.floor(Math.random() * 4); // Randomly choose the largest player offline
+                // Update the round count
+                setRoundCount((prevCount) => prevCount + 1);
+            }
+
+            // Process collected cards for the largest player
+            for (let i = 0; i < players.length; i++) {
+                players[largestIndex].collectedCards.push(players[i].currentPlayedCard);
+                players[i].currentPlayedCard = null;
+            }
+    
+            // Decide the next step based on the round count
+            if (roundCount < maxRounds) { // Use `roundCount + 1` because `setRoundCount` is asynchronous
+                setCardsPlayedThisRound([]);
+                setFirstPlayerIndex(largestIndex);
+                setCurrentPlayerIndex(largestIndex);
+                console.log(`Round ${roundCount + 1} ended.`);
+            } else {
+                setFirstPlayerIndex(-1);
+                setCurrentPlayerIndex(-1);
+            }
+        } catch (error) {
+            console.error('Error in endOneRound: ', error);
         }
-        setRoundCount((prevCount) => prevCount + 1);
-        let largestIndex = Math.floor(Math.random() * 4);
-        for (let i = 0; i < players.length; i++) {
-            players[largestIndex].collectedCards.push(players[i].currentPlayedCard);
-            players[i].currentPlayedCard = null;
-        }
-        // If not reaching the maximum rounds, move to the next player
-        if ( roundCount < maxRounds) {
-            setCardsPlayedThisRound([]);
-            setFirstPlayerIndex(largestIndex);
-            setCurrentPlayerIndex(largestIndex);
-            console.log(`Round ${roundCount+1} ended.`);
-        } else {
-            setFirstPlayerIndex(-1);
-            setCurrentPlayerIndex(-1);
-        }
-    }
+    };
+    
 
     const startGame = () => {
         axios.post(API_URL + '/start_game', {"ai": ai})
@@ -200,6 +241,9 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
     }
 
     const fetchGameStates = async (id: String | null) => {
+        // if (loading) {
+        //     return; // Return early if already loading
+        // }
         try {
             setLoading(true); // Start loading
             const response = await axios.post(API_URL + '/get_game_state', {'id' : id});
@@ -214,7 +258,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
             console.log(game_state);
             // });
         } catch (err) {
-            console.error("Failed to fetch players:", err);
+            console.error("Failed to fetch game states:", err);
             setError("Failed to load player data.");
         } finally {
             setLoading(false); // End loading

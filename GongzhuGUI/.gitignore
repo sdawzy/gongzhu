@@ -56,3 +56,4 @@ storybook-static/
 *.orig
 *.rej
 *.sublime-workspace
+.vercel
