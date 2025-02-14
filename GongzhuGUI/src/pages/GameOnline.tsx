@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, Button, StyleSheet, Image } from 'react-native';
+import { View, Text, Button, StyleSheet, TouchableOpacity, Image } from 'react-native';
+// import { } from 'react-native-paper'
 import Card from '../components/Card';
 import Hand from '../components/Hand';
 import { CardInterface, PlayerInterface } from '../types';
@@ -9,22 +10,83 @@ import GameTable from '../components/GameTable';
 
 const GameOnline : React.FC = () => {
   const [gameStarted, setGameStarted] = useState<boolean>(false);
-  const [aiPolicy, setAiPolicy] = useState<String | null>(null);
+  const [aiPolicy, setAiPolicy] = useState<String | null>("random");
+  const [gameMode, setGameMode] = useState<String | null>("full");
 
   return (
     <View style={styles.container}>
-      {!aiPolicy ? (
+      {!gameStarted ? (
         // Select a AiPolicy
-        <View style={styles.container}>
-          <Text>Select Difficulty</Text>
-          <View style={styles.buttonContainer}>    
-            <Button title="Easy (AI plays randomly)" onPress={() => setAiPolicy('random')} />
+        <View style={{ padding: 20 }}>
+          <Text>AI Algorithm:</Text>
+          <View style={{ flexDirection: "row", marginTop: 10, justifyContent: "space-between" }}>
+          {["random", "greedy"].map((option) => (
+            <TouchableOpacity
+              key={option}
+              onPress={() => setAiPolicy(option)}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                padding: 10,
+                backgroundColor: aiPolicy === option ? "#007AFF" : "#BBB",
+                borderRadius: 5,
+                marginVertical: 5,
+              }}
+            >
+              <Text style={{ color: aiPolicy === option ? "white" : "black" }}>
+                {option}
+              </Text>
+            </TouchableOpacity>
+          ))}
+          </View>
+          <Text>Display Mode:</Text>
+          <View style={{ flexDirection: "row", marginTop: 10, justifyContent: "space-between" }}>
+          {["full", "state"].map((option) => (
+            <TouchableOpacity
+              key={option}
+              onPress={() => setGameMode(option)}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                padding: 10,
+                backgroundColor: gameMode === option ? "#007AFF" : "#BBB",
+                borderRadius: 5,
+                marginVertical: 5,
+              }}
+            >
+              <Text style={{ color: gameMode === option ? "white" : "black" }}>
+                {option}
+              </Text>
+            </TouchableOpacity>
+          ))}
           </View>
           <View style={styles.buttonContainer}>        
-              <Button title="Normal (AI knows some basic strategies)" onPress={() => setAiPolicy('greedy')} />
+              <Button title="Start Game!" onPress={() => setGameStarted(true)} />
           </View>
         </View>
+      //   <View style={styles.container}>
+      //     <Text>Select Difficulty</Text>
+      //     <View style={styles.buttonContainer}>    
+      //       <Button title="Easy (AI plays randomly)" onPress={() => setAiPolicy('random')} />
+      //     </View>
+      //     <View style={styles.buttonContainer}>        
+      //         <Button title="Normal (AI knows some basic strategies)" onPress={() => setAiPolicy('greedy')} />
+      //     </View>
+      //     <View style={styles.buttonContainer}>        
+      //         <Button title="Expert (Not yet implemented)" />
+      //     </View>
+      //   </View>
 
+      // ) : !gameMode? (
+      //   <View style={styles.container}>
+      //     <Text>Select Game Mode</Text>
+      //     <View style={styles.buttonContainer}>    
+      //       <Button title="Full " onPress={() => setGameMode('full')} />
+      //     </View>
+      //     <View style={styles.buttonContainer}>        
+      //         <Button title="State Only" onPress={() => setGameMode('state')} />
+      //     </View>
+      //   </View>        
       ) : (
         <GameTable 
           initialPlayers={[]} 

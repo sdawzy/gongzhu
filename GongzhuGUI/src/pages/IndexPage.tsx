@@ -1,7 +1,8 @@
-import React from 'react';
-import { View, Button, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Button, StyleSheet, TouchableOpacity, Text } from 'react-native';
 
 export default function IndexPage({ navigation }) {
+  const [selectedOption, setSelectedOption] = useState("option1");
   return (
     <View style={styles.container}>
       {/* <View style={styles.buttonContainer}>
