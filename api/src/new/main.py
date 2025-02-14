@@ -1,30 +1,40 @@
 import random
-from .player import Player
-from .env import Env, Gongzhu, GongzhuGame
-from .card import Card, CardCollection, Hand, Deck
+# from .player_new import Player
+from env_new import Gongzhu
+from card import Card, CardCollection, Hand, Deck
 import argparse
+import numpy as np
+from policy import RandomPolicy
 
 def emulate():
     pass
 
 def play_game():
-    game = GongzhuGame()
-    game.start()
+    game = Gongzhu()
+    state, _ = game.reset()
+    round_count = 0
+    policy = RandomPolicy(game)
+    reward = 0
     while not game.is_end_episode():
-        isYourTurn = game.is_your_turn()
-        isEndOneRound = game.is_end_one_round()
-        currentPlayerIndex = game.get_current_player_index()
-        action = input(f"{game.players[currentPlayerIndex].get_name()}, your turn (0: pass, 1: play): ")
-        if isEndOneRound:
-            print(f"----ROUND {game.get_round_count} END----")
-            game.next_round()
-        elif isYourTurn:
-            print("----Your Turn----")
-            input("Please play a card.")
-            game.play_selected_card()
-        else:
-            print("----Not Your Turn----")
-            game.next_player()
+        print(f"Round {round_count}")
+        # print(state)
+        # isYourTurn = game.is_your_turn()
+        # isEndOneRound = game.is_end_one_round()
+        # currentPlayerIndex = game.get_current_player_index()
+        # action = input(f"{game._players[currentPlayerIndex].get_name()}, your turn (0: pass, 1: play): ")
+        # Retrive hands state
+        hand : np.ndarray = state["agent_info"][0].view(Hand)
+        played_cards = state["history"][round_count * 4 :]
+        # print(f"played cards : {played_cards}")
+        action = policy.decide_action(legal_moves=game.legal_moves(hand=hand,
+                        played_cards=played_cards))
+        print(f"Action: {action}")
+        state, reward, terminated, _, _ = game.step(action=action)
+        print(f"Reward from this round: {reward}")
+        print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+        round_count += 1
+        if terminated:
+            break
         
 # def emulate():
 #     deck = Deck()

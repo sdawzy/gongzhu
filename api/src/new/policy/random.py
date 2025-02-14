@@ -1,7 +1,6 @@
 from typing import List, TYPE_CHECKING
-from ..card import Card, CardCollection
-from ..player_new import Player
-from .policy import Policy
+from card import Card, CardCollection
+from policy import Policy
 if TYPE_CHECKING:
     from env import Env
 
@@ -9,7 +8,7 @@ if TYPE_CHECKING:
 # Play a random card from legal moves
 class RandomPolicy(Policy):
     def decide_action(self, legal_moves: CardCollection, 
-        player: Player = None, game_info: dict = None) -> Card:
+        game_info: dict = None) -> Card:
         return legal_moves.get_one_random_card()
     
     def __str__(self):

@@ -1,17 +1,24 @@
 # Ok let me try to rewrite everything using gym.Env
 # By Yue Zhang, Feb 11, 2025
-from .card import Hand, Card, CardCollection, Deck
-from .player_new import Player
-from typing import List, TYPE_CHECKING, Any, Generic, SupportsFloat
-from .policy import Policy, RandomPolicy
+from card import Hand, Card, CardCollection, Deck
+from player_new import Player
+from typing import List, TYPE_CHECKING, Any, Generic, SupportsFloat, TypeVar
+
 from random import Random
 import gymnasium as gym
-from gymnasium import ObsType, ActType, RenderFrame
+from gymnasium.spaces import Discrete, Box, Sequence
+from policy import Policy, RandomPolicy
 import secrets
 import sqlite3
 import json
 import os
 import numpy as np
+
+# if TYPE_CHECKING:
+#     
+ObsType = TypeVar("ObsType")
+ActType = TypeVar("ActType")
+RenderFrame = TypeVar("RenderFrame")
 
 DB_DIR = os.path.join("/data/record.db")
 
@@ -73,17 +80,18 @@ class Gongzhu(gym.Env):
         self._round_count : int = 0
 
         # Observation and action spaces
-        action_space = gym.spaces.Discrete(self._n_actions)
+        action_space = Box(0, 1, shape=(52,))
 
         # Observation space consists of 
         # 1. Information of the agent player (players[0])
         # 2. Other players' information (players[1:4])
         # 3. Game history (List of 52 x 1 one-hot vectors)
         # 4. Other meta information ?
-        # observation_space = gym.spaces.Dict(
-        #     {"agent_info": Box(-1, 1, shape=(2,)), 
-        #     "color": Discrete(3)}, 
-        # )
+        observation_space = gym.spaces.Dict(
+            {"agent_info": Box(0, 1, shape=(52, 6)), 
+            "players_info": Box(0, 1, shape=(3, 52, 4)),
+            "history": Sequence(Box(0, 1, shape=(52,)))}, 
+        )
 
         # Initialize the effects of each special card
         self._pig_effect : float = 1.0
@@ -137,7 +145,7 @@ class Gongzhu(gym.Env):
         self._my_team_score : int = 0
         self._opponent_team_score : int = 0
         # Initialize the game history
-        self.history = []
+        self._history = []
 
         return self.to_dict()
     
@@ -230,6 +238,8 @@ class Gongzhu(gym.Env):
         return legal_moves.contains(card)
 
     def next_round(self):
+        # print(f"Round {self._round_count} ends")
+        # print(f"Length of history is {len(self._history)} ")
         # Sanity check: ensure each player has exactly same number of cards
         assert \
             (len(self._players[0].get_hand()) == len(self._players[1].get_hand()) ) and \
@@ -239,7 +249,7 @@ class Gongzhu(gym.Env):
         # Increase the round count by 1
         self._round_count += 1
         # Find the index of largest player
-        largest_index = (self._first_player_index + self.find_largest_index(self._playedCardsThisRound)) % len(self.players)
+        largest_index = (self._first_player_index + self.find_largest_index(self._playedCardsThisRound)) % self._n_players
         # The largest player collects all the cards played this round
         self._players[largest_index].add_collected_cards(self._playedCardsThisRound)
         self._players[largest_index].sort_collected_cards()
@@ -258,8 +268,6 @@ class Gongzhu(gym.Env):
         else:
             self._first_player_index = largest_index
             self._current_player_index = largest_index
-        
-        # self.add_history()
 
         return {
             "largestIndex": largest_index,
@@ -279,8 +287,8 @@ class Gongzhu(gym.Env):
         # Update the current player index
         self._current_player_index = (self._current_player_index + 1) % self._n_players
         # Update the game history
-        self.add_history(move.vec)
-        
+        self.add_history(move)
+        # print(f"Player {old_player_index} played {move}")
         return {
             "currentPlayerIndex": old_player_index,
             "move": move.to_dict(),
@@ -292,13 +300,9 @@ class Gongzhu(gym.Env):
             self._playedCardsThisRound.append(card)
             self._players[self._current_player_index].play_specific_card(card)
             # Update the current player index
-            self._current_player_index = (self._current_player_index + 1) % len(self.players)
+            self._current_player_index = (self._current_player_index + 1) % self._n_players
             # Update the game history
-            self.history.append({
-                "round": self._round_count,
-                "playerIndex": 0,
-                "move": card.to_dict(),
-            })
+            self.add_history(card)
             return self.to_dict()   
         else:
             return None
@@ -307,24 +311,27 @@ class Gongzhu(gym.Env):
         # TODO: Implement declaration phase
         pass
     
-    @property
     def is_end_episode(self):
         return self._round_count >= self._max_rounds
 
-    @property
     def to_state(self):
-        return self.to_dict()
+        # return self.to_dict()
+        return {"agent_info": self._players[0].vec_full, 
+            "players_info": np.array([self._players[1].vec_partial,
+                 self._players[2].vec_partial,
+                 self._players[3].vec_partial]),
+            "history": self._history} 
 
     def to_dict(self) -> dict:
         return {
             "id": self.id,
-            "aiPolicy": str(self._ai_policy),
+            # "aiPolicy": str(self._ai_policy),
             "players": [player.to_dict() for player in self._players],
             "roundCount": self._round_count,
             "firstPlayerIndex": self._first_player_index,
             "currentPlayerIndex": self._current_player_index,
             "cardsPlayedThisRound": [card.to_dict() for card in self._playedCardsThisRound],
-            "isEndEpisode": self.is_end_episode,
+            "isEndEpisode": self.is_end_episode(),
         }
     
     def start_game(self):
@@ -346,15 +353,67 @@ class Gongzhu(gym.Env):
         return self.to_dict()
 
     def add_history(self, move : np.array) -> None:
-        self.history.append(move)
+        self._history.append(move)
     
     def save_histroy(self) -> None:
         # TODO: Implement saving game history
         return
 
+    # @property
+    def my_team_score(self):
+        return self._players[0].score(self) + self._players[2].score(self)
+    
+    # @property
+    def opponent_team_score(self):
+        return self._players[1].score(self) + self._players[3].score(self)
+    
+    # @property
+    def score_diff(self):
+        return self.my_team_score() - self.opponent_team_score()
+
+    # AI plays the game until the agent's turn
+    # Or until the game is over
+    def play_until_your_turn(self) -> None:
+        while not self.is_your_turn() or self.is_end_one_round():
+            # print(f"History length is {len(self._history)}")
+            if self.is_end_episode():
+                break
+            if self.is_end_one_round():
+                assert len(self._history) % 4 == 0, f"History does not match current played cards! \
+                    played cards this round are {self._playedCardsThisRound}"
+                self.next_round()
+            else:
+                self.next_player()
+
     def step(self, action: ActType) \
         -> tuple[ObsType, SupportsFloat, bool, bool, dict[str, Any]]:
-        return super().step(action)
+        # First, sanity check
+        assert self._round_count < self._max_rounds, "More than max rounds"
+        assert self.is_your_turn() , \
+                f"It's not your turn: player {self._current_player_index}"
+
+        assert action in self.legal_moves(self._players[self._current_player_index].get_hand(), self._playedCardsThisRound), \
+            f"Illegal move: {action} for player {self._current_player_index} \
+                Hand of player {self._current_player_index} is \
+                {np.asarray(self._players[self._current_player_index].get_hand())}. \
+                    Legal moves are {np.asarray(self.legal_moves(self._players[self._current_player_index].get_hand(), self._playedCardsThisRound))} \
+                        Played cards this round are {np.asarray(self._playedCardsThisRound)}"
+
+        score_diff = self.score_diff()
+
+        self.play_selected_card(action)
+        self.play_until_your_turn()
+
+        new_score_diff = self.score_diff()
+
+        # Reward is proportional to the change of advantage over the opponent team
+        # If the game is over, the reward is exactly the difference
+        reward = new_score_diff - score_diff  
+        if not self.is_end_episode():
+            reward /= 10
+
+        # Return the new state, reward, and whether the game is over
+        return self.to_state(), reward, self.is_end_episode(), False, {}
     
     def reset(self, ai_players : List[Player] = [],
         seed=None) -> ObsType:
@@ -362,10 +421,14 @@ class Gongzhu(gym.Env):
         # If the ai players are not specified, 
         if len(ai_players) == 0:
             self._players = [
-                Player(id="You", name="You", avatar_url="avatar_url1", policy=RandomPolicy),
-                Player(id="Panda", name="Panda", avatar_url="avatar_url2", policy=RandomPolicy),
-                Player(id="Penguin", name="Penguin", avatar_url="avatar_url3", policy=RandomPolicy),
-                Player(id="Elephant", name="Elephant", avatar_url="avatar_url4", policy=RandomPolicy),
+                Player(id="You", name="You", avatar_url="avatar_url1", 
+                policy=RandomPolicy(env=self)),
+                Player(id="Panda", name="Panda", avatar_url="avatar_url2", 
+                policy=RandomPolicy(env=self)),
+                Player(id="Penguin", name="Penguin", avatar_url="avatar_url3",
+                policy=RandomPolicy(env=self)),
+                Player(id="Elephant", name="Elephant", avatar_url="avatar_url4",
+                policy=RandomPolicy(env=self)),
             ]
         else:
             self._players =  ai_players
@@ -380,11 +443,15 @@ class Gongzhu(gym.Env):
         # Reset game data by restarting the game
         self.start()
 
-        return self.to_state, {}
+        self.play_until_your_turn()
+
+        return self.to_state(), {}
     
+    # Maybe not need rn?
     def render(self, mode='human'):
         pass
 
+    # Maybe not needed rn?
     def close(self):
         pass
     

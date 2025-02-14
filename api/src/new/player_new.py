@@ -1,22 +1,23 @@
 # Vectorized version of the player class
 # By Yue Zhang, Feb 11, 2025
 import numpy as np
-from .card import Card, CardCollection, Hand
+from card import Card, CardCollection, Hand
 from policy import Policy, RandomPolicy
 from typing import List, TYPE_CHECKING
+from gymnasium import Env
 # from flask import jsonify
 if TYPE_CHECKING:
     from env_new import Gongzhu
+    
 
 class Player:
-    def __init__(self, env : Gongzhu,
+    def __init__(self,
         policy : Policy = RandomPolicy,
         id: str = None, 
         name : str = None, 
         avatar_url: str = None,
         rating : float = None):
 
-        self.env = env
         self.policy = policy
 
         self.id = id
@@ -31,7 +32,7 @@ class Player:
         # 52 x 1 vector representing the cards played
         self._playedCards = CardCollection()  
         # 52 x 1 one-hot / empty vector representing the current playing card
-        self._currentPlayedCard : Card = None  
+        self._currentPlayedCard : Card = Card()
         # 52 x 1 vector representing the close-declared cards 
         self._closeDeclaredCards = CardCollection() 
         # 52 x 1 vector representing the close-declared cards 
@@ -43,17 +44,16 @@ class Player:
         if self.rating is not None:
             self.rating = rating
 
-    @property
-    def score(self):
+    def score(self, env : Env):
         """Get the player's score."""
-        return self.env.calc_score(self._collectedCards)
+        return env.calc_score(self._collectedCards)
 
     # reset player data
     def reset(self):
         self._hand = Hand()
         self._collectedCards = CardCollection()  
         self._playedCards = CardCollection()  
-        self._currentPlayedCard : Card = None  
+        self._currentPlayedCard : Card = Card()
 
         self._score = 0  
         self._closeDeclaredCards = CardCollection() 
@@ -133,12 +133,12 @@ class Player:
         :return: The played card.
         :raises ValueError: If the card is not in the player's hand or if the hand is empty.
         """
-        if self._hand.size() == 0 or not self._hand.contains(card):
+        if self._hand.size == 0 or not self._hand.contains(card):
             raise ValueError(f"{self.name} has no cards to play!")
 
         self.set_current_played_card(card) 
         self.add_card_to_played_cards(card)
-        return self._hand.remove_specific_card(card)
+        return self._hand.remove_card(card)
 
     def add_collected_card(self, card : Card):
         """
@@ -190,7 +190,7 @@ class Player:
         self._currentPlayedCard = card
 
     def remove_current_played_card(self):
-        self._currentPlayedCard = None
+        self._currentPlayedCard = Card()
 
     def to_dict(self):
         return {
@@ -209,12 +209,21 @@ class Player:
     # Vectorized (matrix) representation of a player
     # Currently, it is a 52 x 6 matrix
     @property
-    def vec(self) -> np.array:
+    def vec_full(self) -> np.array:
         return np.array( 
-            self._hand,
-            self._collectedCards,
+            [np.asarray(self._hand),
+            np.asarray(self._collectedCards),
+            np.asarray(self._playedCards),
+            np.asarray(self._currentPlayedCard),
+            np.asarray(self._closeDeclaredCards),
+            np.asarray(self._openDeclaredCards)]
+        )
+
+    @property
+    def vec_partial(self) -> np.array:
+        return np.array( 
+            [self._collectedCards,
             self._playedCards,
             self._currentPlayedCard,
-            self._closeDeclaredCards,
-            self._openDeclaredCards
+            self._openDeclaredCards]
         )

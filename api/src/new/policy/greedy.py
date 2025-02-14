@@ -1,9 +1,8 @@
 from typing import List, TYPE_CHECKING
-from ..card import Card, CardCollection
-from ..card import PIG, SHEEP, DOUBLER, PIGPEN
-from ..player_new import Player
-from .policy import Policy
+from card import Card, CardCollection
+from card import PIG, SHEEP, DOUBLER, PIGPEN
 from random import random
+from policy import Policy
 if TYPE_CHECKING:
     from env import Env
 
@@ -15,7 +14,6 @@ class GreedyPolicy(Policy):
 
     def decide_action(self, 
         legal_moves: CardCollection,
-        player: Player = None, 
         game_info: dict = None) -> Card:
 
         # Sometimes play a random card

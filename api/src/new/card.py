@@ -1,5 +1,5 @@
 # Vectorized version of classes related to cards
-# By Yue Zhang, Feb 9, 2025
+# By Yue Zhang, Feb 13, 2025
 import random
 import numpy as np
 from typing import List
@@ -12,32 +12,40 @@ RANKS = ["02", "03", "04", "05", "06", "07", "08", "09",
 
 def one_hot_vector(length, location) -> np.array:
     # Create a vector of zeros with a length of length
-    vector = np.zeros(length, dtype=float)
+    vector = np.zeros(length, dtype=int)
     # Set the location to 1
-    vector[location] = 1.0
+    vector[location] = 1
     return vector
 
 def one_hot_to_value(vector):
     return np.nonzero(vector)[0][0]
 
 # Card is parametrized as a one-hot vector
-class Card:
+class Card(np.ndarray):
 
-    def __init__(self, rank=None, suit=None, value=None):
-        # If the value is specified
+    def __new__(cls, rank=None, suit=None, value=None):
         if value is not None:
-            assert value >= 0 or value < SUITE_SIZE, \
-                "Value of a card must be between 0 and 52."  
-            self.vec : np.array = one_hot_vector(length=SUITE_SIZE, location=value)
-            return
+            if not (0 <= value < SUITE_SIZE):
+                raise ValueError("Value of a card must be between 0 and 51.")
+            obj : np.ndarray = one_hot_vector(length=SUITE_SIZE, location=value)
+            return obj.view(cls)
+
+        # Empty card
+        if rank is None and suit is None:
+            obj : np.ndarray = np.zeros(SUITE_SIZE, dtype=int)
+            return obj.view(cls)
+
         if rank not in RANKS:
             raise ValueError(f"Invalid rank: {rank}")
         if suit not in SUITS:
             raise ValueError(f"Invalid suit: {suit}")
+
         suit_index = SUITS.index(suit)
         rank_index = RANKS.index(rank)
         value = suit_index * len(RANKS) + rank_index
-        self.vec = one_hot_vector(length=SUITE_SIZE, location=value)
+
+        obj : np.ndarray = one_hot_vector(length=SUITE_SIZE, location=value)
+        return obj.view(cls)
     
     @property
     def rank(self) -> str:
@@ -49,14 +57,23 @@ class Card:
 
     @property
     def value(self) -> int:
-        return int(one_hot_to_value(self.vec))
+        return int(one_hot_to_value(self))
+
+    def __bool__(self):
+        """Returns False if the card is 'empty' (all zeros)."""
+        return np.any(np.asarray(self))  # False if all elements are 0
 
     def __str__(self):
         return f"{self.suit}_{self.rank}"
 
     def __eq__(self, other):
+        if other is None:
+            return not np.any(np.asarray(self))
         assert isinstance(other, Card ), "other must be Card"
         return self.value == other.value
+    
+    def __ne__(self, other):
+        return not self == other
 
     def __hash__(self):
         return self.value
@@ -77,15 +94,14 @@ class Card:
     
     def get_suit(self) -> str:
         return self.suit
-    
-    def get_vec(self) -> np.array:
-        return self.vec
 
     def get_rank(self) -> str:
         return self.rank
 
     # Convert to Dictionary
     def to_dict(self):
+        if self == None:
+            return None
         return {
             'id': self.value, 
             'rank': self.rank,
@@ -95,27 +111,33 @@ class Card:
 
 # Abstract class for collections of cards
 # It is a vector of {0,1}^52
-class CardCollection:
-    def __init__(self, cards = None, vec = None):
-        # if cards is not None:
-        #     self.cards : List[Card] = cards
-        # else:
-        #     self.cards : List[Card] = []  # Initialize the card list
-        if vec is not None:
-            self.vec = vec
-            return
-        self.vec = np.zeros(SUITE_SIZE, dtype=float)
+class CardCollection(np.ndarray):
+    
+    def __new__(cls, cards = None):
+        obj = np.zeros(52, dtype=int).view(cls)
+
         if cards is not None:
-            for card in cards:
-                self.add_card(card)
+            if isinstance(cards, (list, tuple)):
+                for card in cards:
+                    obj.add_card(card)  # Use add_card to populate the collection
+            elif isinstance(cards, Card):
+                obj.add_card(cards)
+            else:
+                raise TypeError("Expected a list of Cards or a single Card.")
+
+        return obj
     
     @property
     def size(self) -> int:
-        return int(self.vec.sum())
+        return int(self.sum())
     
     @property
     def cards(self) -> List[Card]:
-        return [Card(value=i) for i in np.nonzero(self.vec)[0]]
+        self_vec = np.asarray(self)
+        return [Card(value=i) for i in range(52) if self_vec[i] > 0]
+
+    def __repr__(self) -> str:
+        return str([card for card in self.cards])
 
     def __iter__(self):
         self.index = 0  # Initialize the index when iteration starts
@@ -132,71 +154,83 @@ class CardCollection:
     def __getitem__(self, index):
         return self.cards[index]
 
-    def get_vec(self) -> np.array:
-        return self.vec
+    def __contains__(self, other):
+        index = np.argmax(other)  # Gets the position where card == 1
+        return np.asarray(self)[index] > 0  # Check if the count is greater than 0
 
-    def get_cards(self):
-        return self.cards
+    def add_card(self, card):
+        """Adds a single Card to the collection."""
+        if not isinstance(card, Card):
+            raise TypeError("Expected a Card object.")
+        self += card  # Since Card is a one-hot vector, this adds its count.
 
-    # Add a card to the collection
-    def add_card(self, card : Card):
-        if card is not None:
-            self.vec += card.vec
-
-    # Add a list of cards to the collection
-    def add_cards(self, card_list : List[Card]) :
-        if card_list is not None:
-            for card in card_list:
-                self.add_card(card)
+    def add_cards(self, cards):
+        """Adds multiple Cards to the collection."""
+        for card in cards:
+            self.add_card(card)
 
     # Add a CardCollection to the collection
     def add_cards_from_collection(self, card_collection : "CardCollection"):
-        self.vec += card_collection.get_vec()
+        self += card_collection
 
     def contains(self, card : Card) -> bool:
         # return card in self.cards
-        return np.amax(self.vec + card.vec) > 1
-
-    # # Remove the last card from the collection
-    # def remove_last_card(self) -> Card:
-    #     if self.is_empty:
-    #         raise ValueError("No cards left in the collection!")
-    #     card = 
-    #     return self.cards.pop()
+        index = np.argmax(card)  # Gets the position where card == 1
+        return np.asarray(self)[index] > 0  # Check if the count is greater than 0
 
     # Remove and return a specific card from the collection
-    def remove_specific_card(self, card : Card) -> Card:
-        new_vec = self.vec - card.vec
-        assert np.amin(new_vec) >= 0, "Does not have the card to remove!"
-        self.vec = new_vec
+    def remove_card(self, card : Card) -> Card:
+        """Removes a single card from the collection."""
+        if not isinstance(card, Card):
+            raise TypeError("Expected a Card object.")
+        if np.any(np.asarray(self - card) < 0):
+            raise ValueError("Cannot remove a card that is not in the collection.")
+        self -= card
+        return card
+
+    def has_card(self, card : Card):
+        """Checks if the collection contains a given card."""
+        if not isinstance(card, Card):
+            raise TypeError("Expected a Card object.")
+        index = np.argmax(card)  # Gets the position where card == 1
+        return np.asarray(self)[index] > 0  # Check if the count is greater than 0
+
+
+    def get_cards(self):
+        """Returns a list of Card objects present in the collection."""
+        return [Card(value=i) for i in range(52) if self[i] > 0]
+
+    def is_empty(self):
+        """Checks if the collection is empty."""
+        return np.all(self == 0)
 
 
     def __len__(self):
         return self.size
 
     def __add__(self, other) -> "CardCollection":
-        if not isinstance(other, CardCollection) and not isinstance(other, Card):
-            raise TypeError("Can only add CardCollection to CardCollection")
-        new_vec = self.vec + other.get_vec()
-        return CardCollection(vec=new_vec)
-    
-    def __iadd__(self, other) -> "CardCollection":
-        if not isinstance(other, CardCollection) and not isinstance(other, Card):
-            raise TypeError("Can only subtract CardCollection from CardCollection")
-        self.vec += other.get_vec()
-        return self
-        
+        """Union of two card collections."""
+        if not isinstance(other, (CardCollection, Card)):
+            raise TypeError("Can only add another CardCollection.")
+        new_collection = self.copy()
+        new_collection += other
+        return new_collection
+
     def __sub__(self, other) -> "CardCollection":
-        if not isinstance(other, CardCollection) and not isinstance(other, Card):
-            raise TypeError("Can only subtract CardCollection from CardCollection")
-        new_vec = self.vec - other.get_vec()
-        return CardCollection(vec=new_vec)
+        """Removes cards from one collection that exist in another."""
+        if not isinstance(other, (CardCollection, Card)):
+            raise TypeError("Can only subtract another CardCollection.")
+        if not other in self:
+            raise ValueError("Cannot remove more cards than present.")
+        new_collection = self.copy()
+        new_collection -= other
+        return new_collection
     
-    def __isub__(self, other) -> "CardCollection":
-        if not isinstance(other, CardCollection) and not isinstance(other, Card):
-            raise TypeError("Can only subtract CardCollection from CardCollection")
-        self.vec -= other.get_vec()
-        return self
+    def __eq__(self, other):
+        if other is None:
+            return not np.any(np.asarray(self))
+        assert isinstance(other, Card ), "other must be Card"
+        return np.array_equal(self, other)
 
     def is_empty(self):
         return self.size == 0
@@ -219,20 +253,12 @@ class CardCollection:
             suit_index = suit
         assert suit_index >= 0 and suit_index < 4, "Invalid suit!"
 
-        mask = np.zeros(SUITE_SIZE, dtype=float)
-        mask[suit_index * len(RANKS) : (suit_index+1) * len(RANKS)]  = 1.0
-        new_vec = self.vec * mask
+        mask = np.zeros(SUITE_SIZE, dtype=int)
+        mask[suit_index * len(RANKS) : (suit_index+1) * len(RANKS)]  = 1
+        new_vec = self * mask
 
-        return CardCollection(vec=new_vec)
-        # # Create a new collection to store the filtered cards
-        # filtered_collection = CardCollection()
-        # # Iterate through all cards and filter by suit
-        # for card in self.cards:
-        #     if card.get_suit().lower() == suit.lower():
-        #         filtered_collection.add_card(card)
-        # return filtered_collection  # Return the collection of matching cards
+        return new_vec
 
-    # Get a collection of cards that is not a specific suit
     def get_cards_by_not_suit(self, suit) -> "CardCollection":
         return self - self.get_cards_by_suit(suit)
 
@@ -265,7 +291,7 @@ class Deck(CardCollection):
     def deal_card(self) -> Card:
         card = self.get_one_random_card()
         self -= card
-        print(f"Dealt {card}. Current size is {self.size}")
+        # print(f"Dealt {card}. Current size is {self.size}")
         return card
 
 
