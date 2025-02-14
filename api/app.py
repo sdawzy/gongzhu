@@ -29,6 +29,7 @@ def start_game_route():
     # Get AI policy 
     data : dict = request.json
     ai_policy : Policy = ai_policies[data.get('ai')]
+    auto : str = data.get('auto')
     global games
     # game = GongzhuGame(ai_policy=RandomPolicy)
     game = Gongzhu(enable_declaration=False)
@@ -42,13 +43,28 @@ def start_game_route():
                 policy=ai_policy(env=game)),
                 Player(id="Elephant", name="Elephant", avatar_url="avatar_url4",
                 policy=ai_policy(env=game)),
-        ], auto=False)
+        ], auto=auto)
 
     games[game.get_id()] = game  # Store the game in the dictionary
     # print(games)
 
 
     return jsonify({'message': 'Game started successfully', 'id': game.get_id()}), 200
+
+@app.route('/step', methods=['POST'])
+def step():
+    data : dict = request.json
+    id = data.get('id')
+    game : Gongzhu = get_game_by_id(id)
+    suit = data.get('suit')  # Get suit from the query parameter
+    rank = data.get('rank')  # Get rank from the query parameter
+    action = Card(suit=suit, rank=rank)  # Create a tuple representing the action to be taken by the player
+    
+    if not game.is_legal_move(game.get_player_by_index(0), action):
+        return jsonify({'message': 'Invalid move'}), 400
+    
+    game.step(action)  # Step the game with the provided action
+    return jsonify({'message': "stepped to the next state"}), 200
 
 @app.route('/get_game_state', methods=['POST'])
 def get_game_state_route():
@@ -103,8 +119,8 @@ def play_card_route():
     suit = data.get('suit')  # Get suit from the query parameter
     rank = data.get('rank')  # Get rank from the query parameter
     
-    print(request)
-    print(suit, rank)
+    # print(request)
+    # print(suit, rank)
     card = Card(suit=suit, rank=rank)  # Create a card object
     if game.is_legal_move(game.get_player_by_index(0), card):
         game.play_selected_card(card)

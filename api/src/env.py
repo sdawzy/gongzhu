@@ -115,7 +115,11 @@ class Gongzhu(gym.Env):
         self._opponent_team_score : int = 0
 
         # Whether declaration is enabled or not
-        self._enable_declaration = enable_declaration
+        self._enable_declaration : bool = enable_declaration
+
+        # If declaration is enabled, this variable tells whether it's
+        # the declaration phase or not
+        self._declaration_phase : bool = enable_declaration
 
         # Start the game
         # self.start()
@@ -152,6 +156,10 @@ class Gongzhu(gym.Env):
     # Get the legal moves
     def legal_moves(self, hand : Hand, played_cards : List[Card]) \
         -> CardCollection:
+        '''
+        Return a CardCollection of legal moves for a given hand and played cards.
+        If no cards were played, any card in the hand is legal.
+        '''
         # If no cards were played, any card in the hand is legal
         if len(played_cards) == 0:
             return hand
@@ -234,6 +242,9 @@ class Gongzhu(gym.Env):
     
     # Check if a move is legal for this round
     def is_legal_move(self, player : Player, card : Card) -> bool:
+        '''
+        Check if a move is legal for this round
+        '''
         legal_moves = self.legal_moves(player.get_hand(), self._playedCardsThisRound)
         return legal_moves.contains(card)
 
@@ -275,6 +286,10 @@ class Gongzhu(gym.Env):
         }
         
     def next_player(self):
+        # Check if right now is the declaration phase
+        # if self.declaration_phase():
+
+        #     pass
         # Play a card based on the policy
         old_player_index = self._current_player_index
         legal_moves = self.legal_moves(self._players[self._current_player_index].get_hand(), self._playedCardsThisRound)
@@ -310,9 +325,6 @@ class Gongzhu(gym.Env):
     def declaration(self):
         # TODO: Implement declaration phase
         pass
-    
-    def is_end_episode(self):
-        return self._round_count >= self._max_rounds
 
     def to_state(self):
         # return self.to_dict()
@@ -321,6 +333,12 @@ class Gongzhu(gym.Env):
                  self._players[2].vec_partial,
                  self._players[3].vec_partial]),
             "history": self._history} 
+    
+    def declaration_phase(self):
+        return self._declaration_phase
+
+    def is_end_episode(self) -> bool:
+        return self._round_count >= self._max_rounds
 
     def to_dict(self) -> dict:
         for player in self._players:
@@ -371,7 +389,8 @@ class Gongzhu(gym.Env):
 
     def get_played_cards_this_round(self) -> List[Card] :
         return self._playedCardsThisRound
-        
+    
+    # Some functions related to scoring
     # @property
     def my_team_score(self) -> float:
         return self._players[0].score(self) + self._players[2].score(self)

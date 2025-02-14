@@ -10,8 +10,8 @@ import GameTable from '../components/GameTable';
 
 const GameOnline : React.FC = () => {
   const [gameStarted, setGameStarted] = useState<boolean>(false);
-  const [aiPolicy, setAiPolicy] = useState<String | null>("random");
-  const [gameMode, setGameMode] = useState<String | null>("full");
+  const [aiPolicy, setAiPolicy] = useState<String>("random");
+  const [gameMode, setGameMode] = useState<String>("full");
 
   return (
     <View style={styles.container}>
@@ -92,6 +92,7 @@ const GameOnline : React.FC = () => {
           initialPlayers={[]} 
           online={true}
           ai={aiPolicy}
+          gameMode={gameMode}  // State or Full state of the game
         />
       )}
     </View>

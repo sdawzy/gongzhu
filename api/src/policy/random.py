@@ -9,5 +9,10 @@ class RandomPolicy(Policy):
         game_info: dict = None) -> Card:
         return legal_moves.get_one_random_card()
     
+    def decide_declarations(self, 
+        hand: CardCollection,
+        game_info: dict = None) -> dict:
+        pass
+    
     def __str__(self):
         return "RandomPolicy"

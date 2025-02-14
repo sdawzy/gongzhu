@@ -10,6 +10,7 @@ interface GameTableProps {
   initialPlayers: PlayerInterface[]; // Array of arrays of cards for each player
   online: boolean; // Whether the game is being played online or not
   ai: String; //
+  gameMode: String; //
 };
 
 
@@ -23,7 +24,7 @@ const defaultAvatars = [
 
 // const API_URL = "https://gongzhuapi.vercel.app";
 
-const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "normal" }) => {
+const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "normal", gameMode }) => {
     const [players, setPlayers] = useState<PlayerInterface[]>(online ? [] : initialPlayers);  
     const [selectedPlayer, setSelectedPlayer] = useState<PlayerInterface | null>(null);
     const [selectedCard, setSelectedCard] = useState<CardInterface | null>(null);
@@ -52,15 +53,61 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
 
     console.log(API_URL);
     const handleNextTurn = () => {
-        if (isEndOneRound) {
-            endOneRound();
+        // If the game mode is set to be full, then display each turn
+        if (gameMode == "full") {
+            if (isEndOneRound) {
+                endOneRound();
+                return;
+            } else if (isEndEpisode) {
+                endEpisode();
+            } else if (isYourTurn) {
+                handlePlaySelectedCard();
+            } else {
+                handleNextPlayer();
+            }
+        } else { // If not, only display the state when the player needs to take actions
+            if (isEndEpisode) {
+                endEpisode();
+            } else {
+                handleStep();
+            }
+        }
+    }
+
+    const handleStep = () => {
+        // Logic to play the selected card. You can implement this as per the game rules.
+        if (selectedCard === null) {
+            console.warn('No card selected to play');
             return;
-        } else if (isEndEpisode) {
-            endEpisode();
-        } else if (isYourTurn) {
-            handlePlaySelectedCard();
-        } else {
-            handleNextPlayer();
+        }
+        const currentPlayedCard = selectedCard;
+        setSelectedCard(null);
+
+        if ( online) {
+            const requestData = {
+                'id' : gameId,
+                'suit' : currentPlayedCard.suit,
+                'rank' : currentPlayedCard.rank,
+            }
+            axios.post(API_URL + '/step', requestData).then((response) => {
+                // const data = response.data;
+                const statusCode = response.status;
+                if (statusCode === 400) {
+                    addLog("Invalid move by you. Please try again.");
+                    return;
+                }
+                addLog(`Round ${roundCount+1}: ` + `you played ${currentPlayedCard.rank} of ${currentPlayedCard.suit}.`);
+                fetchGameStates(gameId);
+                // setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
+            }).catch((error) => {
+                if (error.status === 400 ) {
+                    addLog("Invalid move by you. Please try again.");
+                    return;
+                }
+                console.error('Error fetching playing card: ', error);
+            });
+        } else if ( playACard(players[0], currentPlayedCard) ) {
+            setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
         }
     }
     
@@ -116,7 +163,6 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
 
     const handlePlaySelectedCard = () => {
         // Logic to play the selected card. You can implement this as per the game rules.
-        // TODO: Implement Online version of this function
         if (selectedCard === null) {
             console.warn('No card selected to play');
             return;
@@ -151,37 +197,6 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
             setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
         }
     };
-
-    // const endOneRound = () => {
-    //     // Figure out the largest of this round based on the played cards
-    //     if (online) {
-    //         axios.post(API_URL + '/next_round', {'id' : gameId}).then((response) => {
-    //             const data = response.data;
-    //             const largestIndex = data.largestIndex;
-    //             addLog(`Round ${roundCount+1}: ` + `${players[largestIndex].name} was largest. `);
-    //             fetchGameStates(gameId);
-    //             // setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
-    //         }).catch((error) => {
-    //             console.error('Error fetching next round: ', error);
-    //         });
-    //     }
-    //     setRoundCount((prevCount) => prevCount + 1);
-    //     let largestIndex = Math.floor(Math.random() * 4);
-    //     for (let i = 0; i < players.length; i++) {
-    //         players[largestIndex].collectedCards.push(players[i].currentPlayedCard);
-    //         players[i].currentPlayedCard = null;
-    //     }
-    //     // If not reaching the maximum rounds, move to the next player
-    //     if ( roundCount < maxRounds) {
-    //         setCardsPlayedThisRound([]);
-    //         setFirstPlayerIndex(largestIndex);
-    //         setCurrentPlayerIndex(largestIndex);
-    //         console.log(`Round ${roundCount+1} ended.`);
-    //     } else {
-    //         setFirstPlayerIndex(-1);
-    //         setCurrentPlayerIndex(-1);
-    //     }
-    // }
 
     const endOneRound = async () => {
         try {
@@ -223,7 +238,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
     
 
     const startGame = () => {
-        axios.post(API_URL + '/start_game', {"ai": ai})
+        axios.post(API_URL + '/start_game', {"ai": ai, "auto": gameMode != 'full'})
             .then(response => {
                 console.log(response.data);
                 fetchGameStates(response.data.id);
