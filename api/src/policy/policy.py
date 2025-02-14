@@ -2,9 +2,11 @@ from typing import List, TYPE_CHECKING
 from ..card import Card, CardCollection
 from ..card import PIG, SHEEP, DOUBLER, BLOOD, PIGPEN, SHEEPPEN, DOUBLERCATCHER
 from ..card import SAFESPADE, SAFECLUB, SAFEDIAMOND
-from ..player import Player
+
+
 if TYPE_CHECKING:
-    from env import Env
+    from gymnasium import Env
+    
 
 class Policy:
     def __init__(self, env: 'Env', epsilon: float = 0.05):
@@ -13,7 +15,6 @@ class Policy:
 
     def decide_action(self, 
         legal_moves: CardCollection,
-        player: Player = None, 
         game_info: dict = None) -> Card:
         raise NotImplementedError("'decide_action' not yet implemented.")
         pass

@@ -30,6 +30,11 @@ class Card(np.ndarray):
             obj : np.ndarray = one_hot_vector(length=SUITE_SIZE, location=value)
             return obj.view(cls)
 
+        # Empty card
+        if rank is None and suit is None:
+            obj : np.ndarray = np.zeros(SUITE_SIZE, dtype=int)
+            return obj.view(cls)
+
         if rank not in RANKS:
             raise ValueError(f"Invalid rank: {rank}")
         if suit not in SUITS:
@@ -54,10 +59,16 @@ class Card(np.ndarray):
     def value(self) -> int:
         return int(one_hot_to_value(self))
 
+    def __bool__(self):
+        """Returns False if the card is 'empty' (all zeros)."""
+        return np.any(np.asarray(self))  # False if all elements are 0
+
     def __str__(self):
         return f"{self.suit}_{self.rank}"
 
     def __eq__(self, other):
+        if other is None:
+            return not np.any(np.asarray(self))
         assert isinstance(other, Card ), "other must be Card"
         return self.value == other.value
     
@@ -89,6 +100,8 @@ class Card(np.ndarray):
 
     # Convert to Dictionary
     def to_dict(self):
+        if self == None:
+            return None
         return {
             'id': self.value, 
             'rank': self.rank,
@@ -122,6 +135,9 @@ class CardCollection(np.ndarray):
     def cards(self) -> List[Card]:
         self_vec = np.asarray(self)
         return [Card(value=i) for i in range(52) if self_vec[i] > 0]
+
+    def __repr__(self) -> str:
+        return str([card for card in self.cards])
 
     def __iter__(self):
         self.index = 0  # Initialize the index when iteration starts
@@ -167,7 +183,7 @@ class CardCollection(np.ndarray):
         """Removes a single card from the collection."""
         if not isinstance(card, Card):
             raise TypeError("Expected a Card object.")
-        if np.any(self - card < 0):
+        if np.any(np.asarray(self - card) < 0):
             raise ValueError("Cannot remove a card that is not in the collection.")
         self -= card
         return card
@@ -210,23 +226,11 @@ class CardCollection(np.ndarray):
         new_collection -= other
         return new_collection
     
-    # def __iadd__(self, other) -> "CardCollection":
-    #     """Union of two card collections."""
-    #     if not isinstance(other, (CardCollection, Card)):
-    #         raise TypeError("Can only add another CardCollection.")
-    #     new_collection = self.copy()
-    #     new_collection += other
-    #     return new_collection
-    
-    # def __isub__(self, other) -> "CardCollection":
-    #     """Removes cards from one collection that exist in another."""
-    #     if not isinstance(other, (CardCollection, Card)):
-    #         raise TypeError("Can only subtract another CardCollection.")
-    #     if np.any(self - other < 0):
-    #         raise ValueError("Cannot remove more cards than present.")
-    #     new_collection = self.copy()
-    #     new_collection -= other
-    #     return new_collection
+    def __eq__(self, other):
+        if other is None:
+            return not np.any(np.asarray(self))
+        assert isinstance(other, Card ), "other must be Card"
+        return np.array_equal(self, other)
 
     def is_empty(self):
         return self.size == 0
@@ -249,7 +253,7 @@ class CardCollection(np.ndarray):
             suit_index = suit
         assert suit_index >= 0 and suit_index < 4, "Invalid suit!"
 
-        mask = np.zeros(SUITE_SIZE, dtype=float)
+        mask = np.zeros(SUITE_SIZE, dtype=int)
         mask[suit_index * len(RANKS) : (suit_index+1) * len(RANKS)]  = 1
         new_vec = self * mask
 
@@ -287,7 +291,7 @@ class Deck(CardCollection):
     def deal_card(self) -> Card:
         card = self.get_one_random_card()
         self -= card
-        print(f"Dealt {card}. Current size is {self.size}")
+        # print(f"Dealt {card}. Current size is {self.size}")
         return card
 
 

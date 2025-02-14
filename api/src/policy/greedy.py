@@ -1,11 +1,8 @@
 from typing import List, TYPE_CHECKING
 from ..card import Card, CardCollection
 from ..card import PIG, SHEEP, DOUBLER, PIGPEN
-from ..player import Player
-from .policy import Policy
 from random import random
-if TYPE_CHECKING:
-    from env import Env
+from .policy import Policy
 
 # Simple greedy policy
 # Only aims to minimize own loss
@@ -15,7 +12,6 @@ class GreedyPolicy(Policy):
 
     def decide_action(self, 
         legal_moves: CardCollection,
-        player: Player = None, 
         game_info: dict = None) -> Card:
 
         # Sometimes play a random card

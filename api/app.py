@@ -1,9 +1,10 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 # from typing import List, dict
-from src.env import GongzhuGame
+from src.env import Gongzhu
 from src.card import Card
-from src.policy import RandomPolicy, GreedyPolicy
+from src.policy import RandomPolicy, GreedyPolicy, Policy
+from src.player import Player
 import os
 
 app = Flask(__name__)
@@ -27,11 +28,22 @@ ai_policies = {
 def start_game_route():
     # Get AI policy 
     data : dict = request.json
-    ai_policy = data.get('ai')
+    ai_policy : Policy = ai_policies[data.get('ai')]
     global games
     # game = GongzhuGame(ai_policy=RandomPolicy)
-    game = GongzhuGame(ai_policy=ai_policies[ai_policy], db_dir=DB_DIR)
-    game.start_game()  # Start a new game
+    game = Gongzhu(enable_declaration=False)
+    # game.start_game()  # Start a new game
+    game.reset(ai_players= [
+                Player(id="You", name="You", avatar_url="avatar_url1", 
+                policy=ai_policy(env=game)),
+                Player(id="Panda", name="Panda", avatar_url="avatar_url2", 
+                policy=ai_policy(env=game)),
+                Player(id="Penguin", name="Penguin", avatar_url="avatar_url3",
+                policy=ai_policy(env=game)),
+                Player(id="Elephant", name="Elephant", avatar_url="avatar_url4",
+                policy=ai_policy(env=game)),
+        ], auto=False)
+
     games[game.get_id()] = game  # Store the game in the dictionary
     # print(games)
 
@@ -43,7 +55,7 @@ def get_game_state_route():
     data : dict = request.json
     id = data.get('id')
     # print(id)
-    game = get_game_by_id(id)
+    game : Gongzhu = get_game_by_id(id)
 
     game_state = game.get_game_state()  # Get the current game state from your game logic
     return jsonify({'game_state': game_state}), 200
@@ -52,7 +64,7 @@ def get_game_state_route():
 def get_current_player_index_route():
     data : dict = request.json
     id = data.get('id')
-    game = get_game_by_id(id)
+    game : Gongzhu = get_game_by_id(id)
 
     current_player_index = game.get_current_player_index(game)  # Get the current player index from your game logic
     return jsonify({'current_player_index': current_player_index}), 200
@@ -62,18 +74,19 @@ def get_legal_moves_route():
     data : dict = request.json
     id = data.get('id')
     player_id = data.get('player_id')  # Get player ID from the query parameter
-    game = get_game_by_id(id)
+    game : Gongzhu = get_game_by_id(id)
     
-    legal_moves = game.get_legal_moves(game, player_id)  # Get the legal moves from your game logic
+    legal_moves = game.legal_moves(hand=game.get_player_by_index(player_id).get_hand(), 
+                    played_cards=game.get_played_cards_this_round())  # Get the legal moves from your game logic
     return jsonify({'legal_moves': legal_moves}), 200
 
 @app.route('/next_player', methods=['POST'])
 def next_player_route():
     data : dict = request.json
     id = data.get('id')
-    game = get_game_by_id(id)
+    game : Gongzhu = get_game_by_id(id)
 
-    if game.current_player_index == 0:  # Check if it's the user's turn
+    if game.get_current_player_index() == 0:  # Check if it's the user's turn
         return jsonify({'message': 'It is your turn'}), 403
     index_and_move = game.next_player()  # Get the next player index and move from the request body
     return jsonify(index_and_move), 200
@@ -82,9 +95,9 @@ def next_player_route():
 def play_card_route():
     data : dict = request.json
     id = data.get('id')
-    game = get_game_by_id(id)
+    game : Gongzhu = get_game_by_id(id)
 
-    if game.current_player_index != 0:  # Check if it's the current player's turn
+    if game.get_current_player_index() != 0:  # Check if it's the current player's turn
         return jsonify({'message': 'It is not your turn'}), 403  # Return 403 Forbidden if it's not the current player's turn
 
     suit = data.get('suit')  # Get suit from the query parameter
@@ -93,7 +106,7 @@ def play_card_route():
     print(request)
     print(suit, rank)
     card = Card(suit=suit, rank=rank)  # Create a card object
-    if game.is_legal_move(game.players[0], card):
+    if game.is_legal_move(game.get_player_by_index(0), card):
         game.play_selected_card(card)
         return jsonify({'message': 'Card played successfully'}), 200
     else:
@@ -103,7 +116,7 @@ def play_card_route():
 def next_round_route():
     data : dict = request.json
     id = data.get('id')
-    game = get_game_by_id(id)
+    game : Gongzhu = get_game_by_id(id)
 
     if not game.is_end_one_round():
         return jsonify({'message': 'It is not the end of the round'}), 403  # Return 403 Forbidden if it's not the end of the round
