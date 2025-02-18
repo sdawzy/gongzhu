@@ -1,13 +1,14 @@
 # Ok let me try to rewrite everything using gym.Env
 # By Yue Zhang, Feb 11, 2025
-from .card import Hand, Card, CardCollection, Deck
+from .card import Hand, Card, CardCollection, Deck, SPECIAL_CARDS
 from .player import Player
 from .policy import Policy, RandomPolicy
+from .declaration import Declaration
 
 from typing import List, TYPE_CHECKING, Any, Generic, SupportsFloat, TypeVar
 from random import Random
 import gymnasium as gym
-from gymnasium.spaces import Discrete, Box, Sequence
+from gymnasium.spaces import Discrete, Box, Sequence, Dict
 import secrets
 import sqlite3
 import json
@@ -21,7 +22,6 @@ ActType = TypeVar("ActType")
 RenderFrame = TypeVar("RenderFrame")
 
 DB_DIR = os.path.join("/data/record.db")
-
 
 
 # Class of Gongzhu game using gym.Env
@@ -80,14 +80,19 @@ class Gongzhu(gym.Env):
         self._round_count : int = 0
 
         # Observation and action spaces
-        action_space = Box(0, 1, shape=(52,))
+        self.action_space = Box(0, 1, shape=(52,))
 
         # Observation space consists of 
         # 1. Information of the agent player (players[0])
         # 2. Other players' information (players[1:4])
         # 3. Game history (List of 52 x 1 one-hot vectors)
-        # 4. Other meta information ?
-        observation_space = gym.spaces.Dict(
+        # 4. First player each round (List of indices)
+        # Other meta information:
+        # 5. Declaration phase (True or False)
+        # 6. Current round number (1-13)
+        self._render_mode : str = render_mode  # "human" or "rgb_array"
+
+        self.observation_space = Dict(
             {"agent_info": Box(0, 1, shape=(52, 6)), 
             "players_info": Box(0, 1, shape=(3, 52, 4)),
             "history": Sequence(Box(0, 1, shape=(52,)))}, 
@@ -108,7 +113,7 @@ class Gongzhu(gym.Env):
         self._playedCardsThisRound : List[Card] = [] # List of cards played this round
 
         # Game history information
-        self._history : List[np.array] = []
+        self._history : List[Card] = []
 
         # Scores of both teams
         self._my_team_score : int = 0
@@ -151,8 +156,36 @@ class Gongzhu(gym.Env):
         # Initialize the game history
         self._history = []
 
+        # Set the phase to declaration phase
+        self._declaration_phase : bool = self._enable_declaration
+
         return self.to_dict()
     
+    # Update known declaration effects
+    def update_effects(self):
+        for player in self._players:
+            declarations = player.get_declarations()
+            closed_declarations = declarations.get_revealed_closed_declarations()
+            open_declarations = declarations.get_open_declarations()
+            for card in closed_declarations:
+                if card.get_rank() == self.PIG.get_rank():
+                    self._pig_effect = 2.0
+                elif card.get_rank() == self.SHEEP.get_rank():
+                    self._sheep_effect = 2.0
+                elif card.get_rank() == self.DOUBLER.get_rank():
+                    self._doubler_effect = 2.0
+                elif card.get_rank() == self.BLOOD.get_rank():
+                    self._blood_effect = 2.0
+            for card in open_declarations:
+                if card.get_rank() == self.PIG.get_rank():
+                    self._pig_effect = 4.0
+                elif card.get_rank() == self.SHEEP.get_rank():
+                    self._sheep_effect = 4.0
+                elif card.get_rank() == self.DOUBLER.get_rank():
+                    self._doubler_effect = 4.0
+                elif card.get_rank() == self.BLOOD.get_rank():
+                    self._blood_effect = 4.0
+
     # Get the legal moves
     def legal_moves(self, hand : Hand, played_cards : List[Card]) \
         -> CardCollection:
@@ -248,6 +281,18 @@ class Gongzhu(gym.Env):
         legal_moves = self.legal_moves(player.get_hand(), self._playedCardsThisRound)
         return legal_moves.contains(card)
 
+    def is_legal_declarations(self, player : Player, declarations : Declaration) -> bool:
+        hand = player.get_hand()
+        # First, check if the player has the declared cards
+        open_declarations = CardCollection(declarations.get_open_declarations())
+        closed_declarations = CardCollection(declarations.get_all_closed_declarations())
+        if not open_declarations in hand or not closed_declarations in hand:
+            return False
+        # Ensure there is no intersection between open and closed declarations
+        if not open_declarations.intersect(closed_declarations).is_empty():
+            return False
+        return True
+
     def next_round(self):
         # print(f"Round {self._round_count} ends")
         # print(f"Length of history is {len(self._history)} ")
@@ -257,6 +302,11 @@ class Gongzhu(gym.Env):
             (len(self._players[0].get_hand()) == len(self._players[2].get_hand()) ) and \
             (len(self._players[0].get_hand()) == len(self._players[3].get_hand()) ), \
             "Error: Different number of cards in hand!"
+        # Check if it is the declaration phase
+        if self._declaration_phase:
+            self._declaration_phase = False
+            self._current_player_index = self._first_player_index
+            return 
         # Increase the round count by 1
         self._round_count += 1
         # Find the index of largest player
@@ -287,9 +337,19 @@ class Gongzhu(gym.Env):
         
     def next_player(self):
         # Check if right now is the declaration phase
-        # if self.declaration_phase():
-
-        #     pass
+        if self.declaration_phase():
+            old_player_index = self._current_player_index
+            declarations : Declaration = self._players[self._current_player_index].policy.decide_declarations(
+                hand=self._players[self._current_player_index].get_hand(),
+                game_info=self.to_dict()
+            )
+            self._players[self._current_player_index].set_declarations(declarations)
+            self._current_player_index = (self._current_player_index + 1) % self._n_players
+            return {
+                "currentPlayerIndex": old_player_index,
+                "move": declarations.to_dict(),
+            }
+            pass
         # Play a card based on the policy
         old_player_index = self._current_player_index
         legal_moves = self.legal_moves(self._players[self._current_player_index].get_hand(), self._playedCardsThisRound)
@@ -297,6 +357,8 @@ class Gongzhu(gym.Env):
             legal_moves=legal_moves, 
             game_info=self.to_dict()
         )
+        if move in SPECIAL_CARDS:
+            self.update_effects()
         self._playedCardsThisRound.append(move)
         self._players[self._current_player_index].play_specific_card(move)
         # Update the current player index
@@ -309,9 +371,22 @@ class Gongzhu(gym.Env):
             "move": move.to_dict(),
         }
 
+    def agent_declarations(self, declarations: Declaration):
+        if self.is_legal_declarations(self._players[self._current_player_index], declarations):
+            self._players[self._current_player_index].set_declarations(declarations)
+            self._current_player_index = (self._current_player_index + 1) % self._n_players
+            return self.to_dict()   
+        else:
+            return None
+
+    def make_declarations(self, declarations: Declaration):
+        return self.agent_declarations(declarations)
+
     def play_selected_card(self, card : Card):
         # Check if the current player can play this card
         if self.is_legal_move(self._players[self._current_player_index], card):
+            if card in SPECIAL_CARDS:
+                self.update_effects()
             self._playedCardsThisRound.append(card)
             self._players[self._current_player_index].play_specific_card(card)
             # Update the current player index
@@ -332,7 +407,8 @@ class Gongzhu(gym.Env):
             "players_info": np.array([self._players[1].vec_partial,
                  self._players[2].vec_partial,
                  self._players[3].vec_partial]),
-            "history": self._history} 
+            "history": self._history,
+            "is_declaration_phase": self._declaration_phase} 
     
     def declaration_phase(self):
         return self._declaration_phase
@@ -351,6 +427,8 @@ class Gongzhu(gym.Env):
             "currentPlayerIndex": self._current_player_index,
             "cardsPlayedThisRound": [card.to_dict() for card in self._playedCardsThisRound],
             "isEndEpisode": self.is_end_episode(),
+            "history": [card.to_dict() for card in self._history],
+            "isDeclarationPhase": self._declaration_phase
         }
     
     def get_game_state(self) -> dict:
@@ -484,14 +562,14 @@ class Gongzhu(gym.Env):
         # Reset player data (other than ratings)
         for player in self._players:
             player.reset()
-
+        
         # Reset game data by restarting the game
         self.start()
 
         if auto:
             self.play_until_your_turn()
 
-        return self.to_state(), {}
+        return self.to_state(), {"enable_declaration": self._enable_declaration}
     
     # Maybe not need rn?
     def render(self, mode='human'):
@@ -557,7 +635,7 @@ class Gongzhu(gym.Env):
 #         }
 
 
-
+# Archaic implementation
 # from .card import Hand, Card, CardCollection, Deck
 # from .player import Player
 # from typing import List, TYPE_CHECKING

@@ -1,7 +1,9 @@
 from typing import List, TYPE_CHECKING
 from ..card import Card, CardCollection
-from ..card import PIG, SHEEP, DOUBLER, PIGPEN
+from ..card import PIG, SHEEP, DOUBLER, PIGPEN, BLOOD
+from ..declaration import Declaration
 from random import random
+import numpy as np
 from .policy import Policy
 
 # Simple greedy policy
@@ -128,6 +130,12 @@ class GreedyPolicy(Policy):
             cardToPlay = legal_moves.get_one_random_card()
 
         return cardToPlay
+
+    def decide_declarations(self, 
+        hand: CardCollection,
+        game_info: dict = None):
+        # TODO: implement declaration
+        return Declaration()
 
     def __str___(self):
         return f'GreedyPolicy_Epsilon={self.epsilon}'

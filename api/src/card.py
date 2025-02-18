@@ -310,6 +310,8 @@ SHEEP = Card("11", "diamond")
 DOUBLER = Card("10", "club")
 BLOOD = Card("14", "heart")
 
+SPECIAL_CARDS = [PIG, SHEEP, DOUBLER, BLOOD]
+
 PIGPEN = CardCollection(
     cards=[Card("13", "spade"), Card("14", "spade")]
 )

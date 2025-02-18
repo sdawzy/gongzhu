@@ -1,5 +1,7 @@
 from typing import List, TYPE_CHECKING
 from abc import ABC, abstractmethod
+import numpy as np
+from ..declaration import Declaration
 from ..card import Card, CardCollection
 from ..card import PIG, SHEEP, DOUBLER, BLOOD, PIGPEN, SHEEPPEN, DOUBLERCATCHER
 from ..card import SAFESPADE, SAFECLUB, SAFEDIAMOND
@@ -23,7 +25,7 @@ class Policy(ABC):
     @abstractmethod
     def decide_declarations(self, 
         hand: CardCollection,
-        game_info: dict = None) -> dict:
+        game_info: dict = None) -> Declaration:
         raise NotImplementedError("'decide_declarations' not yet implemented.")
     
     def __str___(self):

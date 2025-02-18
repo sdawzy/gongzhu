@@ -3,6 +3,7 @@ from flask_cors import CORS
 # from typing import List, dict
 from src.env import Gongzhu
 from src.card import Card
+from src.declaration import Declaration
 from src.policy import RandomPolicy, GreedyPolicy, Policy
 from src.player import Player
 import os
@@ -74,6 +75,7 @@ def get_game_state_route():
     game : Gongzhu = get_game_by_id(id)
 
     game_state = game.get_game_state()  # Get the current game state from your game logic
+    # print(game_state)
     return jsonify({'game_state': game_state}), 200
 
 @app.route('/get_current_player_index', methods=['POST'])
@@ -106,6 +108,29 @@ def next_player_route():
         return jsonify({'message': 'It is your turn'}), 403
     index_and_move = game.next_player()  # Get the next player index and move from the request body
     return jsonify(index_and_move), 200
+
+
+@app.route('/make_declarations', methods=['POST'])
+def make_declarations_route():
+    data : dict = request.json
+    id = data.get('id')
+    game : Gongzhu = get_game_by_id(id)
+
+    if game.get_current_player_index() != 0:  # Check if it's the current player's turn
+        return jsonify({'message': 'It is not your turn'}), 403  # Return 403 Forbidden if it's not the current player's turn
+    
+    open_declarations = data.get('open_declarations')
+    open_declarations = [Card(suit=card['suit'], rank=card['rank']) for card in open_declarations]
+    closed_declarations = data.get('closed_declarations')
+    closed_declarations = [{"card" : Card(suit=card['suit'], rank=card['rank']), "revealed" : False} 
+        for card in closed_declarations]
+    declarations = Declaration(open_declarations=open_declarations, closed_declarations=closed_declarations)
+
+    if game.is_legal_declarations(declarations):
+        game.make_declarations(declarations)
+        return jsonify({'message': 'Declarations made successfully'}), 200
+    else:
+        return jsonify({'message': 'Invalid declarations'}), 400
 
 @app.route('/play_card', methods=['POST'])
 def play_card_route():

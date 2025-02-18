@@ -5,6 +5,7 @@ from .card import Card, CardCollection, Hand
 from .policy import Policy, RandomPolicy
 from typing import List, TYPE_CHECKING
 from gymnasium import Env
+from .declaration import Declaration
 # from flask import jsonify
 if TYPE_CHECKING:
     from env import Gongzhu
@@ -38,6 +39,8 @@ class Player:
         # 52 x 1 vector representing the close-declared cards 
         self._openDeclaredCards = CardCollection()
 
+        self._declarations : Declaration = Declaration()
+
         self._score = 0 
 
         self.rating = 1500
@@ -59,7 +62,11 @@ class Player:
         self._score = 0  
         self._closeDeclaredCards = CardCollection() 
         self._openDeclaredCards = CardCollection() 
+        self._declarations = Declaration()
     
+    def set_declarations(self, declarations : Declaration):
+        self._declarations = declarations
+
     # Get methods
     def get_id(self):
         """Get the player's ID."""
@@ -126,6 +133,9 @@ class Player:
     def add_card_to_played_cards(self, card):
         self._playedCards.add_card(card)
 
+    def get_declarations(self) -> Declaration:
+        return self._declarations
+
     def play_specific_card(self, card : Card):
         """
         Play a specific card from the player's hand.
@@ -136,6 +146,10 @@ class Player:
         """
         if self._hand.size == 0 or not self._hand.contains(card):
             raise ValueError(f"{self.name} has no cards to play!")
+
+        # Check if the card is a closed declared card
+        if card in self._declarations.closed_declarations:
+            self._declarations.reveal(card)
 
         self.set_current_played_card(card) 
         self.add_card_to_played_cards(card)
@@ -215,9 +229,10 @@ class Player:
             [np.asarray(self._hand),
             np.asarray(self._collectedCards),
             np.asarray(self._playedCards),
-            np.asarray(self._currentPlayedCard),
-            np.asarray(self._closeDeclaredCards),
-            np.asarray(self._openDeclaredCards)]
+            np.asarray(self._currentPlayedCard)
+            # np.asarray(self._closeDeclaredCards),
+            # np.asarray(self._openDeclaredCards)
+            ]
         )
 
     @property
@@ -225,8 +240,9 @@ class Player:
         return np.array( 
             [self._collectedCards,
             self._playedCards,
-            self._currentPlayedCard,
-            self._openDeclaredCards]
+            self._currentPlayedCard
+            # self._openDeclaredCards
+            ]
         )
 
 # Archaic version
