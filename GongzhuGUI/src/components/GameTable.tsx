@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Button, StyleSheet, Image, Modal, FlatList, TouchableOpacity  } from 'react-native';
 import Card from '../components/Card';
 import Hand from '../components/Hand';
-import { CardInterface, PlayerInterface } from '../types';
+import Declaration from './Declaration';
+import { CardInterface, PlayerInterface, DeclarationsInterface } from '../types';
 import axios from 'axios';
 import Constants from 'expo-constants';
 
@@ -11,7 +12,7 @@ interface GameTableProps {
   online: boolean; // Whether the game is being played online or not
   ai: String; //
   gameMode: String; //
-  declaration: boolean; // Whether the declaration is enabled or not
+  enable_declarations: boolean; // Whether the declaration is enabled or not
 };
 
 
@@ -25,23 +26,30 @@ const defaultAvatars = [
 
 // const API_URL = "https://gongzhuapi.vercel.app";
 
-const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "normal", gameMode, declaration }) => {
+const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "normal", gameMode, enable_declarations: declaration }) => {
+    const maxRounds = 13;
+
     const [players, setPlayers] = useState<PlayerInterface[]>(online ? [] : initialPlayers);  
     const [selectedPlayer, setSelectedPlayer] = useState<PlayerInterface | null>(null);
     const [selectedCard, setSelectedCard] = useState<CardInterface | null>(null);
     const [firstPlayerIndex, setFirstPlayerIndex] = useState(0);
     const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
     const [roundCount, setRoundCount] = useState(0);
-    const [gameId, setGameId] = useState<String | null> (null);
-    const maxRounds = 13;
-
+    const [gameId, setGameId] = useState<String | null> (null); 
     const [cardsPlayedThisRound, setCardsPlayedThisRound] = useState<CardInterface[]>([]);
     const [logs, setLogs] = useState<string[]>([]);
     const [isLogExpanded, setIsLogExpanded] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(online ? true : false);
     const [started, setStarted] = useState<boolean>(false);
     const bottonTitle = "Show Cards & Declaration";
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<String | null>(null);
+    const [isDeclarationPhase, setDeclarationPhase] = useState<boolean>(false);
+    const [declarations, setDeclarations] = useState<DeclarationsInterface> ({
+        "pig" : 'no',
+        'sheep': 'no',
+        "doubler": 'no',
+        "blood": 'no'
+    });
     // const API_URL = Constants.expoConfig?.extra?.apiUrl;
     const API_URL = "http://0.0.0.0:1926";
     const addLog = (message: string) => {
@@ -132,7 +140,6 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
 
     const playACard = (player: PlayerInterface, card?: CardInterface) : boolean =>  {
         // Logic to play a card from the player's hand.
-        // TODO: Implement Online version of this function
         const index = card === undefined ? 0 : player.hand.findIndex((item) => item.id === card.id);
         card = player.hand[index];
         // check if this card is valid
@@ -241,7 +248,10 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
         }
     };
     
+    const handleDeclarations = () => {
 
+    }
+    
     const startGame = () => {
         axios.post(API_URL + '/start_game', {"ai": ai, "auto": gameMode != 'full', "declaration": declaration})
             .then(response => {
@@ -274,6 +284,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
             setRoundCount(game_state.roundCount); // Update state with the current round count
             setCurrentPlayerIndex(game_state.currentPlayerIndex); // Update state with the index of the current player
             setCardsPlayedThisRound(game_state.cardsPlayedThisRound); // Update state with the cards played this round
+            setDeclarationPhase(game_state.isDeclarationPhase); // Set the declaration
             setGameId(id);
             console.log(game_state);
             // });
@@ -327,7 +338,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
         );
     }
     return (
-        <View style={styles.tableContainer}>
+    <View style={styles.tableContainer}>
         {/* Top Player */}
         <View style={[styles.playerContainer, styles.topPlayer]}>
             <Hand hand={players[2].hand} rotation={0} visible={false} />
@@ -411,9 +422,8 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
             <Card card={players[0].currentPlayedCard} rotation={180} />
         )}
 
-
-        </View>
         {/* Modal for Collected Cards */}
+        </View>
         {selectedPlayer && (
             <Modal
             visible={true}
@@ -493,31 +503,42 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
             <Button title="Close" onPress={toggleLog} />
             </View>
         </Modal>
-            {/* Conditional Button */}
+
+        {/* Conditional Button */}
             {loading?
              <Text>Loading...</Text> : 
              isEndEpisode? 
                 <Button title="New Game (n)" onPress={handleNextTurn} /> : 
             isEndOneRound ? 
                 <Button title="End this Round (n)" onPress={handleNextTurn} /> : 
-            (isYourTurn ? (
-                <Button title="Play Selected Card (n)" onPress={handleNextTurn} />
-            ) : (
+            (isYourTurn ? ( isDeclarationPhase ? 
+                <View>
+                    <Declaration 
+                        hand={players[0].hand} 
+                        declarations={declarations}
+                        setDeclarations={setDeclarations}
+                    />
+                    <Button title="Finish Declaration (n)" onPress={handleNextTurn} />
+                </View> :
+                <Button title="Play Selected Card (n)" onPress={handleNextTurn} /> 
+            ):
                 <Button title="Next (n)" onPress={handleNextTurn} />
-            ))}
-            {/* Log Section */}
-            <View style={styles.logSection}>
-                <Text style={styles.logTitle}>Logs:</Text>
-                <FlatList
-                data={logs}
-                keyExtractor={(item, index) => index.toString()}
-                renderItem={({ item }) => <Text style={styles.logText}>{item}</Text>}
-                />
-                <TouchableOpacity style={styles.expandButton} onPress={toggleLog}>
-                    <Text style={styles.expandButtonText}>Expand</Text>
-                </TouchableOpacity>
-            </View>
+            )}
+
+        {/* Log Section */}
+        <View style={styles.logSection}>
+            <Text style={styles.logTitle}>Logs:</Text>
+            <FlatList
+            data={logs}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={({ item }) => <Text style={styles.logText}>{item}</Text>}
+            />
+            <TouchableOpacity style={styles.expandButton} onPress={toggleLog}>
+                <Text style={styles.expandButtonText}>Expand</Text>
+            </TouchableOpacity>
         </View>
+
+    </View>
         
     );
 };

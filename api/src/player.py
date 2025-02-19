@@ -215,7 +215,7 @@ class Player:
             'hand': self._hand.to_list(),
             'collectedCards': self._collectedCards.to_list(),
             'playedCards': self._playedCards.to_list(),
-            'currentPlayedCard':  None if self._currentPlayedCard is None else self.get_current_played_card().to_dict(),
+            'currentPlayedCard':  None if self._currentPlayedCard==EMPTY_CARD else self.get_current_played_card().to_dict(),
             'closedDeclaredCards': [card.to_dict() if card not in self._hand else EMPTY_CARD.to_dict()
                     for card in self._declarations.get_all_closed_declarations()],
             # 'numClosedDeclarations': self._declarations.num_unrevealed,

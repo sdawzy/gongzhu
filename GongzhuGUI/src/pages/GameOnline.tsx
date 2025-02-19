@@ -115,7 +115,7 @@ const GameOnline : React.FC = () => {
           online={true}
           ai={aiPolicy}
           gameMode={gameMode}  // State or Full state of the game
-          declaration={declaration=="enable"}  // Enable or Disable declaration of the game
+          enable_declarations={declaration=="enable"}  // Enable or Disable declaration of the game
         />
       )}
     </View>

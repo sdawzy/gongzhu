@@ -8,7 +8,7 @@ from .declaration import Declaration
 from typing import List, TYPE_CHECKING, Any, Generic, SupportsFloat, TypeVar
 from random import Random
 import gymnasium as gym
-from gymnasium.spaces import Discrete, Box, Sequence, Dict
+from gymnasium.spaces import Discrete, Box, Sequence, Dict, Space
 import secrets
 import sqlite3
 import json
@@ -95,7 +95,8 @@ class Gongzhu(gym.Env):
         self.observation_space = Dict(
             {"agent_info": Box(0, 1, shape=(52, 6)), 
             "players_info": Box(0, 1, shape=(3, 52, 4)),
-            "history": Sequence(Box(0, 1, shape=(52,)))}, 
+            "history": Sequence(Box(0, 1, shape=(52,))),
+            "is_declaration_phase": Space()},
         )
 
         # Initialize the effects of each special card
@@ -377,8 +378,8 @@ class Gongzhu(gym.Env):
         }
 
     def agent_declarations(self, declarations: Declaration):
-        # For debug purposes
-        return self.next_player() 
+        # # For debug purposes
+        # return self.next_player() 
         if self.is_legal_declarations(self._players[self._current_player_index], declarations):
             self._has_moved[0] = True
             self._players[self._current_player_index].set_declarations(declarations)
@@ -502,7 +503,8 @@ class Gongzhu(gym.Env):
     # AI plays the game until the agent's turn
     # Or until the game is over
     def play_until_your_turn(self) -> None:
-        while not self.is_your_turn() or self.is_end_one_round() or self._declaration_phase:
+        # while not self.is_your_turn() or self.is_end_one_round() or self._declaration_phase:
+        while not self.is_your_turn() or self.is_end_one_round():
             # print(f"History length is {len(self._history)}")
             if self.is_end_episode():
                 break

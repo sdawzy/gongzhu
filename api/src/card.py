@@ -57,6 +57,8 @@ class Card(np.ndarray):
 
     @property
     def value(self) -> int:
+        if np.asarray(self).sum() < 1:
+            return -1
         return int(one_hot_to_value(self))
 
     def __bool__(self):
