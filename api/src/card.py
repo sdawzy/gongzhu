@@ -6,8 +6,11 @@ from typing import List
 
 SUITE_SIZE = 52
 SUITS = ["club", "diamond", "heart", "spade"]
-RANKS = ["02", "03", "04", "05", "06", "07", "08", "09",
-            "10", "11", "12", "13", "14"]
+# RANKS = ["02", "03", "04", "05", "06", "07", "08", "09",
+#             "10", "11", "12", "13", "14"]
+
+RANKS = ["2", "3", "4", "5", "6", "7", "8", "9",
+            "10", "Jack", "Queen", "King", "Ace"]
 
 
 def one_hot_vector(length, location) -> np.array:
@@ -324,63 +327,63 @@ class Hand(CardCollection):
         self.show(player_name)
 
 # Some Constant Cards and Hands
-PIG = Card("12", "spade")
-SHEEP = Card("11", "diamond")
+PIG = Card("Queen", "spade")
+SHEEP = Card("Jack", "diamond")
 DOUBLER = Card("10", "club")
-BLOOD = Card("14", "heart")
+BLOOD = Card("Ace", "heart")
 
 SPECIAL_CARDS = [PIG, SHEEP, DOUBLER, BLOOD]
 
 EMPTY_CARD = Card()
 
 PIGPEN = CardCollection(
-    cards=[Card("13", "spade"), Card("14", "spade")]
+    cards=[Card("King", "spade"), Card("Ace", "spade")]
 )
 SHEEPPEN = CardCollection(
-    cards=[Card("12", "diamond"), Card("13", "diamond"), Card("14", "diamond")]
+    cards=[Card("Queen", "diamond"), Card("King", "diamond"), Card("Ace", "diamond")]
 )
 DOUBLERCATCHER = CardCollection(
-    cards=[Card("11", "club"), Card("12", "club"), Card("13", "club"), Card("14", "club")]
+    cards=[Card("Jack", "club"), Card("Queen", "club"), Card("King", "club"), Card("Ace", "club")]
 )
 
 SAFESPADE = CardCollection(
     [
-        Card("02", "spade"),
-        Card("03", "spade"),
-        Card("04", "spade"),
-        Card("05", "spade"),
-        Card("06", "spade"),
-        Card("07", "spade"),
-        Card("08", "spade"),
-        Card("09", "spade"),
+        Card("2", "spade"),
+        Card("3", "spade"),
+        Card("4", "spade"),
+        Card("5", "spade"),
+        Card("6", "spade"),
+        Card("7", "spade"),
+        Card("8", "spade"),
+        Card("9", "spade"),
         Card("10", "spade"),
-        Card("11", "spade"),
+        Card("Jack", "spade"),
     ]
 )
 
 SAFECLUB = CardCollection(
     [
-        Card("02", "club"),
-        Card("03", "club"),
-        Card("04", "club"),
-        Card("05", "club"),
-        Card("06", "club"),
-        Card("07", "club"),
-        Card("08", "club"),
-        Card("09", "club"),
+        Card("2", "club"),
+        Card("3", "club"),
+        Card("4", "club"),
+        Card("5", "club"),
+        Card("6", "club"),
+        Card("7", "club"),
+        Card("8", "club"),
+        Card("9", "club"),
     ]
 )
 
 SAFEDIAMOND = CardCollection(
     [
-        Card("02", "diamond"),
-        Card("03", "diamond"),
-        Card("04", "diamond"),
-        Card("05", "diamond"),
-        Card("06", "diamond"),
-        Card("07", "diamond"),
-        Card("08", "diamond"),
-        Card("09", "diamond"),
+        Card("2", "diamond"),
+        Card("3", "diamond"),
+        Card("4", "diamond"),
+        Card("5", "diamond"),
+        Card("6", "diamond"),
+        Card("7", "diamond"),
+        Card("8", "diamond"),
+        Card("9", "diamond"),
         Card("10", "diamond"),
     ]
 )

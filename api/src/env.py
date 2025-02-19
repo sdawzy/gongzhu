@@ -1,6 +1,6 @@
 # Ok let me try to rewrite everything using gym.Env
 # By Yue Zhang, Feb 11, 2025
-from .card import Hand, Card, CardCollection, Deck, SPECIAL_CARDS, EMPTY_CARD
+from .card import Hand, Card, CardCollection, Deck, PIG, SHEEP, BLOOD, DOUBLER, SPECIAL_CARDS, EMPTY_CARD
 from .player import Player
 from .policy import Policy, RandomPolicy
 from .declaration import Declaration
@@ -27,10 +27,10 @@ DB_DIR = os.path.join("/data/record.db")
 # Class of Gongzhu game using gym.Env
 class Gongzhu(gym.Env):
     # Define 4 important cards
-    PIG = Card("12", "spade")
-    SHEEP = Card("11", "diamond")
-    DOUBLER = Card("10", "club")
-    BLOOD = Card("14", "heart")
+    PIG = PIG
+    SHEEP = SHEEP
+    DOUBLER = DOUBLER
+    BLOOD = BLOOD
 
     # Define blood cards with their scores
     class BloodCard:
@@ -45,22 +45,22 @@ class Gongzhu(gym.Env):
             return self.score
 
     BLOOD_CARDS = [
-        BloodCard("02", 0),
-        BloodCard("03", 0),
-        BloodCard("04", 0),
-        BloodCard("05", 10),
-        BloodCard("06", 10),
-        BloodCard("07", 10),
-        BloodCard("08", 10),
-        BloodCard("09", 10),
+        BloodCard("2", 0),
+        BloodCard("3", 0),
+        BloodCard("4", 0),
+        BloodCard("5", 10),
+        BloodCard("6", 10),
+        BloodCard("7", 10),
+        BloodCard("8", 10),
+        BloodCard("9", 10),
         BloodCard("10", 10),
-        BloodCard("11", 20),
-        BloodCard("12", 30),
-        BloodCard("13", 40),
-        BloodCard("14", 50),
+        BloodCard("Jack", 20),
+        BloodCard("Queen", 30),
+        BloodCard("King", 40),
+        BloodCard("Ace", 50),
     ]
     # Define the first card
-    FIRST_CARD = Card("02", "spade")
+    FIRST_CARD = Card("2", "spade")
 
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 20}
 
@@ -128,6 +128,15 @@ class Gongzhu(gym.Env):
         self._declaration_phase : bool = enable_declaration
 
         self._has_moved : List[bool] = [False, False, False, False]
+
+        self._first_player_indices : List[int] = []
+
+        self._suit_rounds : dict[str : int] = {
+            "spade": 0,
+            "heart": 0,
+            "diamond": 0,
+            "club": 0,
+        }
         # Start the game
         # self.start()
 
@@ -162,6 +171,15 @@ class Gongzhu(gym.Env):
         self._declaration_phase = self._enable_declaration
 
         self._has_moved = [False, False, False, False]
+
+        self._suit_rounds = {
+            "spade": 0,
+            "heart": 0,
+            "diamond": 0,
+            "club": 0,
+        }
+
+        self._first_player_indices = [self._first_player_index]
         return self.to_dict()
     
     # Update known declaration effects
@@ -196,12 +214,25 @@ class Gongzhu(gym.Env):
         Return a CardCollection of legal moves for a given hand and played cards.
         If no cards were played, any card in the hand is legal.
         '''
-        # If no cards were played, any card in the hand is legal
-        if len(played_cards) == 0:
-            return hand
 
-        legal_moves = hand.get_cards_by_suit(played_cards[0].get_suit())
-        return legal_moves if not legal_moves.is_empty() else hand
+        # If no cards were played, any card in the hand is legal
+        legal_moves = hand if len(played_cards) == 0 else hand.get_cards_by_suit(played_cards[0].get_suit())
+        # If no cards of the same suit, then the whole hand is legal
+        legal_moves = legal_moves if not legal_moves.is_empty() else hand
+        # Special rule: if the suit is the same as an openly declared card,
+        # and this suit is not yet played, then this openly declared card
+        # is illegal
+        legal_moves = CardCollection(cards=legal_moves.cards)
+        if len(legal_moves) > 1:
+            if self._pig_effect >= 4.0 and PIG in legal_moves and self._suit_rounds['spade'] == 0:
+                legal_moves -= PIG
+            if self._sheep_effect >= 4.0 and SHEEP in legal_moves and self._suit_rounds['diamond'] == 0:
+                legal_moves -= SHEEP
+            if self._blood_effect >= 4.0 and BLOOD in legal_moves and self._suit_rounds['heart'] == 0:
+                legal_moves -= BLOOD
+            if self._doubler_effect >= 4.0 and DOUBLER in legal_moves and self._suit_rounds['club'] == 0:
+                legal_moves -= DOUBLER
+        return legal_moves
     
     # find the index of the player who played the largest card
     def find_largest_index(self, played_cards : List[Card]) -> int:
@@ -316,6 +347,7 @@ class Gongzhu(gym.Env):
         if self._declaration_phase:
             self._declaration_phase = False
             self._current_player_index = self._first_player_index
+            self.update_effects()
             return 
         # Increase the round count by 1
         self._round_count += 1
@@ -327,6 +359,8 @@ class Gongzhu(gym.Env):
         # Empty the currentPlayedCard of players
         for player in self._players:
             player.remove_current_played_card()
+        # Increase suit round by one
+        self._suit_rounds[self._playedCardsThisRound[0].get_suit()] += 1
         # Empty the played cards of this round
         self._playedCardsThisRound = []
         # Update the current player index
@@ -339,6 +373,8 @@ class Gongzhu(gym.Env):
         else:
             self._first_player_index = largest_index
             self._current_player_index = largest_index
+            # Update the list of first player indices
+            self._first_player_indices.append(self._current_player_index)
 
         return {
             "largestIndex": largest_index,
@@ -357,6 +393,8 @@ class Gongzhu(gym.Env):
             )
             self._players[self._current_player_index].set_declarations(declarations)
             self._current_player_index = (self._current_player_index + 1) % self._n_players
+            if self.is_end_one_round():
+                self.next_round()
             return {
                 "currentPlayerIndex": old_player_index,
                 "move": declarations.to_dict(),
@@ -389,6 +427,8 @@ class Gongzhu(gym.Env):
             self._has_moved[0] = True
             self._players[self._current_player_index].set_declarations(declarations)
             self._current_player_index = (self._current_player_index + 1) % self._n_players
+            if self.is_end_one_round():
+                self.next_round()
             return self.to_dict()   
         else:
             return None
@@ -439,6 +479,7 @@ class Gongzhu(gym.Env):
             "cardsPlayedThisRound": [card.to_dict() for card in self._playedCardsThisRound],
             "isEndEpisode": self.is_end_episode(),
             "history": [card.to_dict() for card in self._history],
+            "firstPlayerIndices": self._first_player_indices,
             "isDeclarationPhase": self._declaration_phase
         }
     

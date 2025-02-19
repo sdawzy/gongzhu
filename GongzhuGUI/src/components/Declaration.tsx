@@ -44,7 +44,7 @@ const Declaration : React.FC<{
     declarations: DeclarationsInterface,
     setDeclarations: Function,
 }>= ({hand, declarations, setDeclarations}) => {
-    console.log(hand)
+    // console.log(hand)
     let has_pig = false;
     let has_sheep = false;
     let has_blood = false;

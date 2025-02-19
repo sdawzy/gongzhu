@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, Button, StyleSheet, Image, Modal, FlatList, TouchableOpacity  } from 'react-native';
 import Card from '../components/Card';
 import {PIG, SHEEP, BLOOD, DOUBLER, SPECIAL_CARDS} from '../components/specialCards';
@@ -27,13 +27,16 @@ const defaultAvatars = [
 
 // const API_URL = "https://gongzhuapi.vercel.app";
 
-const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "normal", gameMode, enable_declarations: declaration }) => {
+const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "normal", gameMode, enable_declarations }) => {
     const maxRounds = 13;
 
     const [players, setPlayers] = useState<PlayerInterface[]>(online ? [] : initialPlayers);  
     const [selectedPlayer, setSelectedPlayer] = useState<PlayerInterface | null>(null);
     const [selectedCard, setSelectedCard] = useState<CardInterface | null>(null);
+    const [firstPlayerIndices, setFirstPlayerIndices] = useState<number[]>([]);
+    const [history, setHistory] = useState<CardInterface[]>([]);
     const [firstPlayerIndex, setFirstPlayerIndex] = useState(0);
+    const [readyToLog, setReadyToLog] = useState<boolean>(false);
     const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
     const [roundCount, setRoundCount] = useState(0);
     const [gameId, setGameId] = useState<String | null> (null); 
@@ -61,7 +64,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
         setIsLogExpanded(!isLogExpanded);
     };
 
-    console.log(API_URL);
+    // console.log(API_URL);
     const handleNextTurn = () => {
         // If the game mode is set to be full, then display each turn
         if (gameMode == "full") {
@@ -88,9 +91,48 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
         }
     }
 
-    const fetchHistory = () => {
-
+    // Fetch the log based on history and first players
+    const fetchLogs = async () => {
+        setLogs([]);
+        // If there is a declaration phase
+        if (enable_declarations) {
+            addLog('---Declaration phase---');
+            for (let i = 0; i < 4; i++) {
+                const player = players[(i + firstPlayerIndices[0]) % 4];
+                addDeclarationsLog(player.name,
+                {
+                    "closed_declarations" : player.closedDeclaredCards,
+                    "open_declarations" : player.openDeclaredCards,
+                });
+            }
+            if (!isDeclarationPhase) {
+                addLog('---End Declaration phase---');
+            }
+        }
+        // 
+        for (let r = 0; r < roundCount; r++) {
+            addLog(`---Round ${r+1}---`);
+            for (let i = 0; i < 4; i++) {
+                const player = players[(i + firstPlayerIndices[r]) % 4];
+                const move = history[r * 4 + i];
+                addLog(`Round ${r+1}: ` + `${player.name} played ${move.rank} of ${move.suit}.`);
+            }
+            const largest_player = players[firstPlayerIndices[r+1]];
+            addLog(`${largest_player.name} was the largest.`);
+            addLog(`---End Round ${r+1}---`);
+        }
+        //
+        if (!isDeclarationPhase)  {
+            addLog(`---Round ${roundCount+1}---`);
+        }
+        for (let i = 0; i < cardsPlayedThisRound.length; i++) {
+            const player = players[(i + firstPlayerIndices[roundCount]) % 4];
+            const move = history[roundCount * 4 + i];
+            addLog(`Round ${roundCount+1}: ` + `${player.name} played ${move.rank} of ${move.suit}.`);            
+        }
+        console.log('History: ', history);
     }
+
     const convertToDeclarationRequest = () => {
         let closedDeclaredCards: CardInterface[] = [];
         let openDeclaredCards: CardInterface[] = [];
@@ -137,7 +179,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
             axios.post(API_URL + '/step', requestData).then((response) => {
                 // const data = response.data;
                 const statusCode = response.status;
-                addDeclarationsLog("You", requestData)
+                // addDeclarationsLog("You", requestData)
                 if (statusCode === 400) {
                     addLog("Invalid declaration by you. Please try again.");
                     return;
@@ -147,7 +189,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
                 // setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
             }).catch((error) => {
                 if (error.status === 400 ) {
-                    addLog("Invalid move by you. Please try again.");
+                    // addLog("Invalid move by you. Please try again.");
                     return;
                 }
                 console.error('Error fetching playing card: ', error);
@@ -173,7 +215,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
                     addLog("Invalid move by you. Please try again.");
                     return;
                 }
-                addLog(`Round ${roundCount+1}: ` + `you played ${currentPlayedCard.rank} of ${currentPlayedCard.suit}.`);
+                // addLog(`Round ${roundCount+1}: ` + `you played ${currentPlayedCard.rank} of ${currentPlayedCard.suit}.`);
                 fetchGameStates(gameId);
                 // setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
             }).catch((error) => {
@@ -212,7 +254,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
             player.playedCards.push(card);
             player.hand.splice(index, 1);
             setCardsPlayedThisRound(prevCards => [card, ...prevCards]);
-            addLog(`Round ${roundCount+1}: ` + `${player.name} played ${card.rank} of ${card.suit}.`);
+            // addLog(`Round ${roundCount+1}: ` + `${player.name} played ${card.rank} of ${card.suit}.`);
             return true;
         } else {
             addLog(`Round ${roundCount+1}: Invalid move by ${player.name}.`);
@@ -263,11 +305,11 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
             axios.post(API_URL + '/next_player', {'id' : gameId}).then((response) => {
                 const data = response.data;
                 const move = data.move;
-                if (isDeclarationPhase) {
-                    addDeclarationsLog(players[currentPlayerIndex].name, move)
-                } else {
-                    addLog(`Round ${roundCount+1}: ` + `${players[currentPlayerIndex].name} played ${move.rank} of ${move.suit}.`);
-                }
+                // if (isDeclarationPhase) {
+                //     // addDeclarationsLog(players[currentPlayerIndex].name, move)
+                // } else {
+                //     // addLog(`Round ${roundCount+1}: ` + `${players[currentPlayerIndex].name} played ${move.rank} of ${move.suit}.`);
+                // }
                 fetchGameStates(gameId);
                 // setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
             }).catch((error) => {
@@ -300,7 +342,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
                     addLog("Invalid move by you. Please try again.");
                     return;
                 }
-                addLog(`Round ${roundCount+1}: ` + `you played ${currentPlayedCard.rank} of ${currentPlayedCard.suit}.`);
+                // addLog(`Round ${roundCount+1}: ` + `you played ${currentPlayedCard.rank} of ${currentPlayedCard.suit}.`);
                 fetchGameStates(gameId);
                 // setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
             }).catch((error) => {
@@ -324,7 +366,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
                 const data = response.data;
                 largestIndex = data.largestIndex;
     
-                addLog(`Round ${roundCount + 1}: ` + `${players[largestIndex].name} was largest.`);
+                // addLog(`Round ${roundCount + 1}: ` + `${players[largestIndex].name} was largest.`);
                 await fetchGameStates(gameId); // Ensure the game state is fetched before proceeding
             } else {
                 largestIndex = Math.floor(Math.random() * 4); // Randomly choose the largest player offline
@@ -354,15 +396,39 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
     };
     
     const handleDeclarations = () => {
-
+        const requestData = convertToDeclarationRequest(); // request
+        console.log(requestData);
+        axios.post(API_URL + '/make_declarations', requestData).then((response) => {
+            // const data = response.data;
+            const statusCode = response.status;
+            addDeclarationsLog("You", requestData)
+            if (statusCode === 400) {
+                addLog("Invalid declaration by you. Please try again.");
+                return;
+            }
+            // addLog(`Round ${roundCount+1}: ` + `you played ${currentPlayedCard.rank} of ${currentPlayedCard.suit}.`);
+            fetchGameStates(gameId);
+            // setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
+        }).catch((error) => {
+            if (error.status === 400 ) {
+                addLog("Invalid move by you. Please try again.");
+                return;
+            }
+            console.error('Error fetching playing card: ', error);
+        });
     }
     
     const startGame = () => {
-        axios.post(API_URL + '/start_game', {"ai": ai, "auto": gameMode != 'full', "declaration": declaration})
+        axios.post(API_URL + '/start_game', {"ai": ai, "auto": gameMode != 'full', "declaration": enable_declarations})
             .then(response => {
                 console.log(response.data);
                 fetchGameStates(response.data.id);
-                
+                setDeclarations({
+                    "pig" : 'no',
+                    'sheep': 'no',
+                    "doubler": 'no',
+                    "blood": 'no'
+                })
             })
             .catch(error => {
                 console.error("There was an error starting the game!", error);
@@ -391,14 +457,22 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
             setCardsPlayedThisRound(game_state.cardsPlayedThisRound); // Update state with the cards played this round
             setDeclarationPhase(game_state.isDeclarationPhase); // Set the declaration
             setGameId(id);
-            console.log(game_state);
+            setFirstPlayerIndices(game_state.firstPlayerIndices);
+            // setHistory(game_state.history);
+            setHistory([...game_state.history]); 
+            // console.log(players);
+            // console.log(game_state.history);
+            // console.log(history);
+            // console.log(game_state);
             // });
+            setReadyToLog(true);
         } catch (err) {
             console.error("Failed to fetch game states:", err);
             setError("Failed to load player data.");
         } finally {
             setLoading(false); // End loading
             setStarted(true); // Game started
+            // fetchLogs();
         }
     };
 
@@ -422,6 +496,16 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
         setCurrentPlayerIndex(-1);
         console.log('End of one round');
     }
+
+    // const isFetching = useRef(false);
+
+    useEffect(() => {
+        if (readyToLog) {
+            fetchLogs();
+            setReadyToLog(false);
+        }
+    }, [readyToLog]); 
+    
 
     // Add hotkey for the center button
     useEffect(() => {

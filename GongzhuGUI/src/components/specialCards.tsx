@@ -3,13 +3,13 @@ import { CardInterface } from '../types';
 
 const PIG : CardInterface = {
     suit: 'spade',
-    rank: '12',
+    rank: 'Queen',
     id: '49'
 }
 
 const SHEEP: CardInterface = {
     suit: 'diamond',
-    rank: '11',
+    rank: 'Jack',
     id: '22'
 }
 
@@ -21,8 +21,9 @@ const DOUBLER: CardInterface = {
 
 const BLOOD: CardInterface = {
     suit: 'heart',
-    rank: '14',
+    rank: 'Ace',
     id: '38'
 }
 
-export { PIG, SHEEP, DOUBLER, BLOOD };
+const SPECIAL_CARDS: CardInterface[] = [PIG, SHEEP, DOUBLER, BLOOD]
+export { PIG, SHEEP, DOUBLER, BLOOD, SPECIAL_CARDS };
