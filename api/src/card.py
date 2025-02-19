@@ -101,7 +101,12 @@ class Card(np.ndarray):
     # Convert to Dictionary
     def to_dict(self):
         if self == None:
-            return None
+            return {
+            'id': -1,
+            'rank': "NA",
+            'suit': "NA",
+            'known': False
+        }
         return {
             'id': self.value, 
             'rank': self.rank,
@@ -225,7 +230,14 @@ class CardCollection(np.ndarray):
         new_collection = self.copy()
         new_collection -= other
         return new_collection
-    
+
+    def intersect(self, other) -> "CardCollection":
+        if not isinstance(other, (CardCollection, Card)):
+            raise TypeError("Can only intersect another CardCollection or Card.")
+        new_collection = np.asarray(self.copy())
+        new_collection *= np.asarray(other)
+        return new_collection.view(CardCollection)
+
     def __eq__(self, other):
         if other is None:
             return not np.any(np.asarray(self))
@@ -311,6 +323,8 @@ DOUBLER = Card("10", "club")
 BLOOD = Card("14", "heart")
 
 SPECIAL_CARDS = [PIG, SHEEP, DOUBLER, BLOOD]
+
+EMPTY_CARD = Card()
 
 PIGPEN = CardCollection(
     cards=[Card("13", "spade"), Card("14", "spade")]

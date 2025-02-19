@@ -1,7 +1,7 @@
 # Vectorized version of the player class
 # By Yue Zhang, Feb 11, 2025
 import numpy as np
-from .card import Card, CardCollection, Hand
+from .card import Card, CardCollection, Hand, EMPTY_CARD
 from .policy import Policy, RandomPolicy
 from typing import List, TYPE_CHECKING
 from gymnasium import Env
@@ -148,7 +148,7 @@ class Player:
             raise ValueError(f"{self.name} has no cards to play!")
 
         # Check if the card is a closed declared card
-        if card in self._declarations.closed_declarations:
+        if card in self._declarations.get_all_closed_declarations():
             self._declarations.reveal(card)
 
         self.set_current_played_card(card) 
@@ -207,7 +207,7 @@ class Player:
     def remove_current_played_card(self):
         self._currentPlayedCard = Card()
 
-    def to_dict(self):
+    def to_dict(self, is_agent = False):
         return {
             'id': self.id,
             'name': self.name,
@@ -216,8 +216,10 @@ class Player:
             'collectedCards': self._collectedCards.to_list(),
             'playedCards': self._playedCards.to_list(),
             'currentPlayedCard':  None if self._currentPlayedCard is None else self.get_current_played_card().to_dict(),
-            'closeDeclaredCards': self._closeDeclaredCards.to_list(),
-            'openDeclaredCards': self._openDeclaredCards.to_list(),
+            'closedDeclaredCards': [card.to_dict() if card not in self._hand else EMPTY_CARD.to_dict()
+                    for card in self._declarations.get_all_closed_declarations()],
+            # 'numClosedDeclarations': self._declarations.num_unrevealed,
+            'openDeclaredCards': [card.to_dict() for card in self._declarations.get_open_declarations()],
             'score': self._score
         }
     

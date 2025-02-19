@@ -1,6 +1,6 @@
 # Ok let me try to rewrite everything using gym.Env
 # By Yue Zhang, Feb 11, 2025
-from .card import Hand, Card, CardCollection, Deck, SPECIAL_CARDS
+from .card import Hand, Card, CardCollection, Deck, SPECIAL_CARDS, EMPTY_CARD
 from .player import Player
 from .policy import Policy, RandomPolicy
 from .declaration import Declaration
@@ -126,6 +126,7 @@ class Gongzhu(gym.Env):
         # the declaration phase or not
         self._declaration_phase : bool = enable_declaration
 
+        self._has_moved : List[bool] = [False, False, False, False]
         # Start the game
         # self.start()
 
@@ -157,8 +158,9 @@ class Gongzhu(gym.Env):
         self._history = []
 
         # Set the phase to declaration phase
-        self._declaration_phase : bool = self._enable_declaration
+        self._declaration_phase = self._enable_declaration
 
+        self._has_moved = [False, False, False, False]
         return self.to_dict()
     
     # Update known declaration effects
@@ -302,6 +304,8 @@ class Gongzhu(gym.Env):
             (len(self._players[0].get_hand()) == len(self._players[2].get_hand()) ) and \
             (len(self._players[0].get_hand()) == len(self._players[3].get_hand()) ), \
             "Error: Different number of cards in hand!"
+        # Reset moved flags
+        self._has_moved = [False, False, False, False]
         # Check if it is the declaration phase
         if self._declaration_phase:
             self._declaration_phase = False
@@ -336,9 +340,11 @@ class Gongzhu(gym.Env):
         }
         
     def next_player(self):
+        old_player_index = self._current_player_index
+        self._has_moved[old_player_index] = True
         # Check if right now is the declaration phase
         if self.declaration_phase():
-            old_player_index = self._current_player_index
+            print(f"player {old_player_index} is making a declaration")
             declarations : Declaration = self._players[self._current_player_index].policy.decide_declarations(
                 hand=self._players[self._current_player_index].get_hand(),
                 game_info=self.to_dict()
@@ -351,7 +357,6 @@ class Gongzhu(gym.Env):
             }
             pass
         # Play a card based on the policy
-        old_player_index = self._current_player_index
         legal_moves = self.legal_moves(self._players[self._current_player_index].get_hand(), self._playedCardsThisRound)
         move : Card = self._players[self._current_player_index].policy.decide_action(
             legal_moves=legal_moves, 
@@ -372,7 +377,10 @@ class Gongzhu(gym.Env):
         }
 
     def agent_declarations(self, declarations: Declaration):
+        # For debug purposes
+        return self.next_player() 
         if self.is_legal_declarations(self._players[self._current_player_index], declarations):
+            self._has_moved[0] = True
             self._players[self._current_player_index].set_declarations(declarations)
             self._current_player_index = (self._current_player_index + 1) % self._n_players
             return self.to_dict()   
@@ -385,6 +393,7 @@ class Gongzhu(gym.Env):
     def play_selected_card(self, card : Card):
         # Check if the current player can play this card
         if self.is_legal_move(self._players[self._current_player_index], card):
+            self._has_moved[0] = True
             if card in SPECIAL_CARDS:
                 self.update_effects()
             self._playedCardsThisRound.append(card)
@@ -396,10 +405,6 @@ class Gongzhu(gym.Env):
             return self.to_dict()   
         else:
             return None
-
-    def declaration(self):
-        # TODO: Implement declaration phase
-        pass
 
     def to_state(self):
         # return self.to_dict()
@@ -450,7 +455,7 @@ class Gongzhu(gym.Env):
         return self._current_player_index == 0
     
     def is_end_one_round(self) -> bool:
-        return len(self._playedCardsThisRound) >= 4
+        return all(self._has_moved)
 
     def end_episode(self):
         return self.to_dict()
@@ -497,7 +502,7 @@ class Gongzhu(gym.Env):
     # AI plays the game until the agent's turn
     # Or until the game is over
     def play_until_your_turn(self) -> None:
-        while not self.is_your_turn() or self.is_end_one_round():
+        while not self.is_your_turn() or self.is_end_one_round() or self._declaration_phase:
             # print(f"History length is {len(self._history)}")
             if self.is_end_episode():
                 break

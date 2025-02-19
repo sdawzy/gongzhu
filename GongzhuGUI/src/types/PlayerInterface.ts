@@ -13,6 +13,7 @@ export interface PlayerInterface {
     currentPlayedCard?: CardInterface | null;
 
     score?: number;
-    closeDeclaredCards?: CardInterface[] | null;
+    numClosedDeclarations?: number;
+    closedDeclaredCards?: CardInterface[] | null;
     openDeclaredCards?: CardInterface[] | null;
 }

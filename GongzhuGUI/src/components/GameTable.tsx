@@ -11,6 +11,7 @@ interface GameTableProps {
   online: boolean; // Whether the game is being played online or not
   ai: String; //
   gameMode: String; //
+  declaration: boolean; // Whether the declaration is enabled or not
 };
 
 
@@ -24,7 +25,7 @@ const defaultAvatars = [
 
 // const API_URL = "https://gongzhuapi.vercel.app";
 
-const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "normal", gameMode }) => {
+const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "normal", gameMode, declaration }) => {
     const [players, setPlayers] = useState<PlayerInterface[]>(online ? [] : initialPlayers);  
     const [selectedPlayer, setSelectedPlayer] = useState<PlayerInterface | null>(null);
     const [selectedCard, setSelectedCard] = useState<CardInterface | null>(null);
@@ -72,6 +73,10 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
                 handleStep();
             }
         }
+    }
+
+    const fetchHistory = () => {
+
     }
 
     const handleStep = () => {
@@ -238,7 +243,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
     
 
     const startGame = () => {
-        axios.post(API_URL + '/start_game', {"ai": ai, "auto": gameMode != 'full'})
+        axios.post(API_URL + '/start_game', {"ai": ai, "auto": gameMode != 'full', "declaration": declaration})
             .then(response => {
                 console.log(response.data);
                 fetchGameStates(response.data.id);
@@ -446,7 +451,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
                 {/* Declared Cards */}
                 <Text style={styles.sectionTitle}>Close Declared Cards:</Text>
                 <FlatList
-                data={selectedPlayer.closeDeclaredCards}
+                data={selectedPlayer.closedDeclaredCards}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                     <Card card={item} visible={item.known}/>

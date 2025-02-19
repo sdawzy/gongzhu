@@ -30,10 +30,12 @@ def start_game_route():
     # Get AI policy 
     data : dict = request.json
     ai_policy : Policy = ai_policies[data.get('ai')]
-    auto : str = data.get('auto')
+    auto = data.get('auto')
+    declaration = data.get('declaration')
+    print(f"Declaration is {declaration}")
     global games
     # game = GongzhuGame(ai_policy=RandomPolicy)
-    game = Gongzhu(enable_declaration=False)
+    game = Gongzhu(enable_declaration=declaration)
     # game.start_game()  # Start a new game
     game.reset(ai_players= [
                 Player(id="You", name="You", avatar_url="avatar_url1", 

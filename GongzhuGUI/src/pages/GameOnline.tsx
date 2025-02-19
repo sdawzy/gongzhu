@@ -12,6 +12,7 @@ const GameOnline : React.FC = () => {
   const [gameStarted, setGameStarted] = useState<boolean>(false);
   const [aiPolicy, setAiPolicy] = useState<String>("random");
   const [gameMode, setGameMode] = useState<String>("full");
+  const [declaration, setDeclaration] = useState<String>("enable");
 
   return (
     <View style={styles.container}>
@@ -60,6 +61,27 @@ const GameOnline : React.FC = () => {
             </TouchableOpacity>
           ))}
           </View>
+          <Text>Declaration:</Text>
+          <View style={{ flexDirection: "row", marginTop: 10, justifyContent: "space-between" }}>
+          {["enable", "disable"].map((option) => (
+            <TouchableOpacity
+              key={option}
+              onPress={() => setDeclaration(option)}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                padding: 10,
+                backgroundColor: declaration === option ? "#007AFF" : "#BBB",
+                borderRadius: 5,
+                marginVertical: 5,
+              }}
+            >
+              <Text style={{ color: declaration === option ? "white" : "black" }}>
+                {option}
+              </Text>
+            </TouchableOpacity>
+          ))}
+          </View>
           <View style={styles.buttonContainer}>        
               <Button title="Start Game!" onPress={() => setGameStarted(true)} />
           </View>
@@ -93,6 +115,7 @@ const GameOnline : React.FC = () => {
           online={true}
           ai={aiPolicy}
           gameMode={gameMode}  // State or Full state of the game
+          declaration={declaration=="enable"}  // Enable or Disable declaration of the game
         />
       )}
     </View>
