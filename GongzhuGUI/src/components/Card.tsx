@@ -1,3 +1,4 @@
+// Card component
 import React from 'react';
 import { View, Image, StyleSheet } from 'react-native';
 import cardImages from './cardImages';  // Mapping of card names to images
@@ -15,7 +16,7 @@ const Card : React.FC< {
     visible = true;  // Default visibility is true if not provided
   }
 
-  const cardName = visible ? `${card.suit}_${card.rank}` : 'back';  // Construct the card name from the suit and rank properties  // Fetch the card image from the mapping using the constructed card name
+  const cardName = visible ? `${card.suit}_${card.rank}` : 'back';  // Construct the card name from the suit and rank properties 
   const cardImage = cardImages[cardName];  // Fetch the image from the mapping
 
   return (
@@ -23,7 +24,7 @@ const Card : React.FC< {
       <Image
         source={cardImage}
         style={[styles.cardImage, { transform: [{ rotate: `${rotation}deg` }] }]}
-        resizeMode="contain" // Keeps the image aspect ratio
+        resizeMode="contain" 
       />
     </View>
   );
@@ -34,7 +35,7 @@ const styles = StyleSheet.create({
     margin: 0,
   },
   cardImage: {
-    width: 100,  // Adjust the size of the cards
+    width: 100,  
     height: 140,
   },
 });

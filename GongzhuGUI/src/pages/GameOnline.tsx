@@ -1,12 +1,7 @@
+// Game page
 import React, { useState } from 'react';
-import { View, Text, Button, StyleSheet, TouchableOpacity, Image } from 'react-native';
-// import { } from 'react-native-paper'
-import Card from '../components/Card';
-import Hand from '../components/Hand';
-import { CardInterface, PlayerInterface } from '../types';
+import { View, Text, Button, StyleSheet, TouchableOpacity } from 'react-native';
 import GameTable from '../components/GameTable';
-// import {  } from '../types';
-// Helper function to generate a deck of card
 
 const GameOnline : React.FC = () => {
   const [gameStarted, setGameStarted] = useState<boolean>(false);
@@ -17,7 +12,7 @@ const GameOnline : React.FC = () => {
   return (
     <View style={styles.container}>
       {!gameStarted ? (
-        // Select a AiPolicy
+        // Game configurations
         <View style={{ padding: 20 }}>
           <Text>AI Algorithm:</Text>
           <View style={{ flexDirection: "row", marginTop: 10, justifyContent: "space-between" }}>
@@ -85,36 +80,14 @@ const GameOnline : React.FC = () => {
           <View style={styles.buttonContainer}>        
               <Button title="Start Game!" onPress={() => setGameStarted(true)} />
           </View>
-        </View>
-      //   <View style={styles.container}>
-      //     <Text>Select Difficulty</Text>
-      //     <View style={styles.buttonContainer}>    
-      //       <Button title="Easy (AI plays randomly)" onPress={() => setAiPolicy('random')} />
-      //     </View>
-      //     <View style={styles.buttonContainer}>        
-      //         <Button title="Normal (AI knows some basic strategies)" onPress={() => setAiPolicy('greedy')} />
-      //     </View>
-      //     <View style={styles.buttonContainer}>        
-      //         <Button title="Expert (Not yet implemented)" />
-      //     </View>
-      //   </View>
-
-      // ) : !gameMode? (
-      //   <View style={styles.container}>
-      //     <Text>Select Game Mode</Text>
-      //     <View style={styles.buttonContainer}>    
-      //       <Button title="Full " onPress={() => setGameMode('full')} />
-      //     </View>
-      //     <View style={styles.buttonContainer}>        
-      //         <Button title="State Only" onPress={() => setGameMode('state')} />
-      //     </View>
-      //   </View>        
+        </View>   
       ) : (
+        // Start game
         <GameTable 
           initialPlayers={[]} 
           online={true}
           ai={aiPolicy}
-          gameMode={gameMode}  // State or Full state of the game
+          gameMode={gameMode}  // full version or state-only version
           enable_declarations={declaration=="enable"}  // Enable or Disable declaration of the game
         />
       )}
@@ -127,15 +100,15 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#008000', // Green table background like a card table
+    backgroundColor: '#008000', 
   },
   playerContainer: {
     position: 'absolute',
     alignItems: 'center',
   },
   buttonContainer: {
-    marginBottom: 16, // Add vertical spacing between buttons
-    width: '80%', // Optional: Set a consistent width for buttons
+    marginBottom: 16, 
+    width: '80%', 
   },
   container: {
     flex: 1,
@@ -155,11 +128,10 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   cardWrapper: {
-    position: 'absolute', // Allow overlapping
-    zIndex: 1, // Ensure overlapping is in order of the cards
+    position: 'absolute', 
+    zIndex: 1, 
   },
   listContent: {
-    // alignItems: 'center',
     height: '100%',
   },
   topHand: {

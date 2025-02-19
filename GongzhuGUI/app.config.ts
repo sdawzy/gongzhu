@@ -1,6 +1,6 @@
 import 'dotenv/config';
 
-console.log('API URL:', process.env.API_URL);
+// console.log('API URL:', process.env.API_URL);
 // console.log('API Key:', process.env.API_KEY);
 
 export default {
@@ -22,7 +22,7 @@ export default {
         },
         extra: {
             apiUrl: process.env.API_URL || "http://localhost:1926",
-            apiKey: process.env.API_KEY,
+            apiKey: process.env.API_KEY || null,
         },
     }
 };

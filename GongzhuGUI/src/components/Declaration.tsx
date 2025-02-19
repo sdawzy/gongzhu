@@ -1,3 +1,4 @@
+// Declaration UI used in GameTable
 import React from 'react';
 import { View, Image, Text, StyleSheet, Button, TouchableOpacity } from 'react-native';
 import { CardInterface, DeclarationsInterface } from '../types';

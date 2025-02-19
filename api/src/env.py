@@ -1,5 +1,6 @@
 # Ok let me try to rewrite everything using gym.Env
 # By Yue Zhang, Feb 11, 2025
+# Updated Feb 18, 2025
 from .card import Hand, Card, CardCollection, Deck, PIG, SHEEP, BLOOD, DOUBLER, SPECIAL_CARDS, EMPTY_CARD
 from .player import Player
 from .policy import Policy, RandomPolicy

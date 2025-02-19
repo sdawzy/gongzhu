@@ -1,14 +1,10 @@
+// Page for rules
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import Card from '../components/Card'
 import {PIG, SHEEP, BLOOD, BlOODS, DOUBLER, SPECIAL_CARDS} from '../components/specialCards'
 import Hand from '../components/Hand'
 import { CardInterface } from '../types';
-
-// const PIG : CardInterface = { suit : "spade", rank : "Queen", id : "spade_12"}
-// const SHEEP : CardInterface = { suit : "diamond", rank : "Jack", id : "diamond_11"}
-// const DOUBLER : CardInterface = { suit : "club", rank : "10", id : "club_10"}
-
 
 const HandExample1: CardInterface[] = [
   PIG,
@@ -127,16 +123,9 @@ const RulesPage: React.FC = () => {
       </Text>      
       
       <Text style={styles.sectionTitle}>Have fun playing Gongzhu!</Text>
-      {/* <Text style={styles.sectionTitle}>Tips</Text>
-      <Text style={styles.text}>
-        - Avoid collecting penalty cards like the Queen of Spades and Hearts.
-      </Text>
-      <Text style={styles.text}>
-        - Try to win the Jack of Diamonds and the Ten of Clubs for bonus points.
-      </Text>
-      <Text style={styles.text}>
-        - Keep track of cards that have already been played to make strategic decisions.
-      </Text> */}
+      <View style={styles.footer}>
+        <Text style={styles.footerText}><p data-key="footer">© 2025 Yue Zhang. All rights reserved.</p></Text>
+      </View>
     </ScrollView>
   );
 };
@@ -183,18 +172,27 @@ const styles = StyleSheet.create({
     marginLeft: 20,
   },
   highlight: {
-    backgroundColor: '#FFFF99', // Light yellow background
-    color: '#000', // Black text color
+    backgroundColor: '#FFFF99', 
+    color: '#000', 
     fontWeight: 'bold',
     paddingHorizontal: 2,
     borderRadius: 4,
   },
   strongHighlight: {
-    backgroundColor: '#FF9999', // Light red background
-    color: '#fff', // White text color
+    backgroundColor: '#FF9999', 
+    color: '#fff', 
     paddingHorizontal: 4,
     borderRadius: 4,
     fontWeight: 'bold',
+  },
+  footer: {
+    height: 50,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  footerText: {
+    fontSize: 16,
+    color: "#333",
   },
 });
 

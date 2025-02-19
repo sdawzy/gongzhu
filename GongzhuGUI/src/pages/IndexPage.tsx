@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { View, Button, StyleSheet, TouchableOpacity, Text } from 'react-native';
+// Index page
+import React from 'react';
+import { View, Button, StyleSheet, Text } from 'react-native';
 
 export default function IndexPage({ navigation }) {
-  const [selectedOption, setSelectedOption] = useState("option1");
   return (
     <View style={styles.container}>
       {/* <View style={styles.buttonContainer}>
@@ -23,6 +23,9 @@ export default function IndexPage({ navigation }) {
           onPress={() => navigation.navigate('RulesPage')}
         />
       </View>
+      <View style={styles.footer}>
+        <Text style={styles.footerText}><p data-key="footer">© 2025 Yue Zhang. All rights reserved.</p></Text>
+      </View>
     </View>
   );
 }
@@ -34,7 +37,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonContainer: {
-    marginBottom: 16, // Add vertical spacing between buttons
-    width: '80%', // Optional: Set a consistent width for buttons
+    marginBottom: 16, 
+    width: '80%', 
+  },
+  footer: {
+    height: 50,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  footerText: {
+    fontSize: 16,
+    color: "#333",
   },
 });

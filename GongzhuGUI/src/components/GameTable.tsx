@@ -1,3 +1,4 @@
+// Game table component
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, Button, StyleSheet, Image, Modal, FlatList, TouchableOpacity  } from 'react-native';
 import Card from '../components/Card';
@@ -9,13 +10,12 @@ import axios from 'axios';
 import Constants from 'expo-constants';
 
 interface GameTableProps {
-  initialPlayers: PlayerInterface[]; // Array of arrays of cards for each player
-  online: boolean; // Whether the game is being played online or not
-  ai: String; //
-  gameMode: String; //
-  enable_declarations: boolean; // Whether the declaration is enabled or not
+  initialPlayers: PlayerInterface[]; 
+  online: boolean; 
+  ai: String; 
+  gameMode: String; 
+  enable_declarations: boolean; 
 };
-
 
 const defaultAvatars = [
     require('../../assets/images/avatars/You.png'),
@@ -24,11 +24,9 @@ const defaultAvatars = [
     require('../../assets/images/avatars/Elephant.png')
 ];
 
-
-// const API_URL = "https://gongzhuapi.vercel.app";
-
 const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "normal", gameMode, enable_declarations }) => {
     const maxRounds = 13;
+    const bottonTitle = "Show Cards & Declaration";
 
     const [players, setPlayers] = useState<PlayerInterface[]>(online ? [] : initialPlayers);  
     const [selectedPlayer, setSelectedPlayer] = useState<PlayerInterface | null>(null);
@@ -45,7 +43,6 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
     const [isLogExpanded, setIsLogExpanded] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(online ? true : false);
     const [started, setStarted] = useState<boolean>(false);
-    const bottonTitle = "Show Cards & Declaration";
     const [error, setError] = useState<String | null>(null);
     const [isDeclarationPhase, setDeclarationPhase] = useState<boolean>(false);
     const [declarations, setDeclarations] = useState<DeclarationsInterface> ({
@@ -54,6 +51,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
         "doubler": 'no',
         "blood": 'no'
     });
+    // If deployed, use the api from the environment variable
     // const API_URL = Constants.expoConfig?.extra?.apiUrl;
     const API_URL = "http://0.0.0.0:1926";
     const addLog = (message: string) => {
@@ -130,9 +128,10 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
             const move = history[roundCount * 4 + i];
             addLog(`Round ${roundCount+1}: ` + `${player.name} played ${move.rank} of ${move.suit}.`);            
         }
-        console.log('History: ', history);
+        // console.log('History: ', history);
     }
 
+    // Convert declarations to api request format
     const convertToDeclarationRequest = () => {
         let closedDeclaredCards: CardInterface[] = [];
         let openDeclaredCards: CardInterface[] = [];
@@ -175,7 +174,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
         // Logic to play the selected card. You can implement this as per the game rules.
         if (isDeclarationPhase) {
             const requestData = convertToDeclarationRequest(); // request
-            console.log(requestData);
+            // console.log(requestData);
             axios.post(API_URL + '/step', requestData).then((response) => {
                 // const data = response.data;
                 const statusCode = response.status;
@@ -239,9 +238,9 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
     };
 
     const isValidMove = (card: CardInterface) : boolean   => {  
-        // For the sake of debugging
-        // TODO: Implement Online version of this function
-        return true; // For now, all cards are valid
+        // Deprecated method
+        // Now use api to determine whether a move is valid
+        return true; 
     };
 
     const playACard = (player: PlayerInterface, card?: CardInterface) : boolean =>  {
@@ -262,6 +261,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
         }
     }
     
+    // Add declarations to logs
     const addDeclarationsLog = (name: string | undefined, declarations) => {
         for(const card of declarations["open_declarations"]) {
             if (card.id == PIG.id) {
@@ -320,6 +320,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
         }
     };
 
+    // Play selected card
     const handlePlaySelectedCard = () => {
         // Logic to play the selected card. You can implement this as per the game rules.
         if (selectedCard === null) {
@@ -385,7 +386,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
                 setCardsPlayedThisRound([]);
                 setFirstPlayerIndex(largestIndex);
                 setCurrentPlayerIndex(largestIndex);
-                console.log(`Round ${roundCount + 1} ended.`);
+                // console.log(`Round ${roundCount + 1} ended.`);
             } else {
                 setFirstPlayerIndex(-1);
                 setCurrentPlayerIndex(-1);
@@ -397,7 +398,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
     
     const handleDeclarations = () => {
         const requestData = convertToDeclarationRequest(); // request
-        console.log(requestData);
+        // console.log(requestData);
         axios.post(API_URL + '/make_declarations', requestData).then((response) => {
             // const data = response.data;
             const statusCode = response.status;
@@ -421,7 +422,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
     const startGame = () => {
         axios.post(API_URL + '/start_game', {"ai": ai, "auto": gameMode != 'full', "declaration": enable_declarations})
             .then(response => {
-                console.log(response.data);
+                // console.log(response.data);
                 fetchGameStates(response.data.id);
                 setDeclarations({
                     "pig" : 'no',
@@ -436,8 +437,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
     }
 
     const endEpisode = () => {
-        // Episode end logic here
-        console.log('Episode ended. New Game started.');
+        // console.log('Episode ended. New Game started.');
         startGame();
     }
 
@@ -448,7 +448,6 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
         try {
             setLoading(true); // Start loading
             const response = await axios.post(API_URL + '/get_game_state', {'id' : id});
-            // .then(response => {
             const game_state = response.data.game_state;
             setPlayers(game_state.players); // Update state with player data
             setFirstPlayerIndex(game_state.firstPlayerIndex); // Update state with the index of the first player
@@ -460,17 +459,12 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
             setFirstPlayerIndices(game_state.firstPlayerIndices);
             // setHistory(game_state.history);
             setHistory([...game_state.history]); 
-            // console.log(players);
-            // console.log(game_state.history);
-            // console.log(history);
-            // console.log(game_state);
-            // });
             setReadyToLog(true);
         } catch (err) {
             console.error("Failed to fetch game states:", err);
             setError("Failed to load player data.");
         } finally {
-            setLoading(false); // End loading
+            setLoading(false); 
             setStarted(true); // Game started
             // fetchLogs();
         }
@@ -482,7 +476,8 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
         }, []); 
     }
 
-    let isEndOneRound = false; //
+    let isEndOneRound = false; 
+    // Check if every player has played some card
     if (players.length > 0) {
         isEndOneRound = players[0].currentPlayedCard != null &&
         players[1].currentPlayedCard != null &&
@@ -494,7 +489,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
     const isYourTurn = (currentPlayerIndex === 0); // Assuming player 0 is at the bottom
     if (isEndOneRound && currentPlayerIndex != -1) {
         setCurrentPlayerIndex(-1);
-        console.log('End of one round');
+        // console.log('End of one round');
     }
 
     // const isFetching = useRef(false);
@@ -783,7 +778,7 @@ const styles = StyleSheet.create({
   },
   currentPlayerWrapper: {
     borderWidth: 5,
-    borderColor: '#FFD700', // Highlight color (gold in this case)
+    borderColor: '#FFD700', 
     borderRadius: -5,
   },
   modalContainer: {
@@ -808,7 +803,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#FFD700',
-    // marginVertical: 50,
   },
   playedCardContainer: {
     position: 'absolute',
@@ -818,8 +812,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     left: 0,
-    width: '23%', // Adjust width as needed
-    maxHeight: '14%', // Adjust height as needed
+    width: '23%', 
+    maxHeight: '14%', 
     backgroundColor: '#222',
     padding: 10,
     borderTopRightRadius: 10,

@@ -1,3 +1,4 @@
+// Hand UI
 import React, {useState} from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import Card from './Card';
@@ -8,7 +9,7 @@ const Hand: React.FC< {
     rotation?: number,  // Optional rotation angle
     visible?: boolean,  // Optional visibility state
     spacing?: number, // Optional spacing
-    selectable?: boolean, // Optional
+    selectable?: boolean, // Optional selectable
     selectedCard?: CardInterface | null,  // Optional selected card ID
     setSelectedCard?: Function,  // Optional callback function to update selected card state
   }> = ({ hand, rotation, visible, spacing, selectable, selectedCard, setSelectedCard }) => {
@@ -87,7 +88,6 @@ const styles = StyleSheet.create({
       position: 'relative', // Allow absolute positioning of cards
       overflow: 'hidden', // Hide overflowing cards
       justifyContent: 'flex-end', // Align cards to the bottom
-    //   alignItems: 'center', //
       width: 500,
     },
     title: {

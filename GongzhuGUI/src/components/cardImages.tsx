@@ -1,4 +1,4 @@
-// import require from 'react-native';
+// Mappings from card to images
 const cardImages = {
     // Spades
     'spade_2': require('../../assets/images/cards/card_spade_02.png'),  // 2♠
