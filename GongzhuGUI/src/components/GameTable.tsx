@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, StyleSheet, Image, Modal, FlatList, TouchableOpacity  } from 'react-native';
 import Card from '../components/Card';
+import {PIG, SHEEP, BLOOD, DOUBLER, SPECIAL_CARDS} from '../components/specialCards';
 import Hand from '../components/Hand';
 import Declaration from './Declaration';
 import { CardInterface, PlayerInterface, DeclarationsInterface } from '../types';
@@ -70,7 +71,11 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
             } else if (isEndEpisode) {
                 endEpisode();
             } else if (isYourTurn) {
-                handlePlaySelectedCard();
+                if (isDeclarationPhase) {
+                    handleDeclarations();
+                } else {
+                    handlePlaySelectedCard();
+                }
             } else {
                 handleNextPlayer();
             }
@@ -86,9 +91,68 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
     const fetchHistory = () => {
 
     }
+    const convertToDeclarationRequest = () => {
+        let closedDeclaredCards: CardInterface[] = [];
+        let openDeclaredCards: CardInterface[] = [];
+        if (declarations['pig'] != 'no') {
+            if (declarations['pig'] == 'open') {
+                openDeclaredCards.push(PIG);
+            } else {
+                closedDeclaredCards.push(PIG);
+            }
+        }
+        if (declarations['sheep'] != 'no') {
+            if (declarations['sheep'] == 'open') {
+                openDeclaredCards.push(SHEEP);
+            } else {
+                closedDeclaredCards.push(SHEEP);
+            }
+        }
+        if (declarations['blood'] != 'no') {
+            if (declarations['blood'] == 'open') {
+                openDeclaredCards.push(BLOOD);
+            } else {
+                closedDeclaredCards.push(BLOOD);
+            }
+        }
+        if (declarations['doubler'] != 'no') {
+            if (declarations['doubler'] == 'open') {
+                openDeclaredCards.push(DOUBLER);
+            } else {
+                closedDeclaredCards.push(DOUBLER);
+            }
+        }
+        return {
+            'id' : gameId,
+            'closed_declarations' : closedDeclaredCards,
+            'open_declarations' : openDeclaredCards
+        }
+    }
 
     const handleStep = () => {
         // Logic to play the selected card. You can implement this as per the game rules.
+        if (isDeclarationPhase) {
+            const requestData = convertToDeclarationRequest(); // request
+            console.log(requestData);
+            axios.post(API_URL + '/step', requestData).then((response) => {
+                // const data = response.data;
+                const statusCode = response.status;
+                addDeclarationsLog("You", requestData)
+                if (statusCode === 400) {
+                    addLog("Invalid declaration by you. Please try again.");
+                    return;
+                }
+                // addLog(`Round ${roundCount+1}: ` + `you played ${currentPlayedCard.rank} of ${currentPlayedCard.suit}.`);
+                fetchGameStates(gameId);
+                // setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
+            }).catch((error) => {
+                if (error.status === 400 ) {
+                    addLog("Invalid move by you. Please try again.");
+                    return;
+                }
+                console.error('Error fetching playing card: ', error);
+            });
+        }
         if (selectedCard === null) {
             console.warn('No card selected to play');
             return;
@@ -96,7 +160,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
         const currentPlayedCard = selectedCard;
         setSelectedCard(null);
 
-        if ( online) {
+        if (online) {
             const requestData = {
                 'id' : gameId,
                 'suit' : currentPlayedCard.suit,
@@ -155,6 +219,43 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
             return false;
         }
     }
+    
+    const addDeclarationsLog = (name: string | undefined, declarations) => {
+        for(const card of declarations["open_declarations"]) {
+            if (card.id == PIG.id) {
+                addLog(`${name} openly declared Pig!`);
+            }
+            if (card.id == SHEEP.id) {
+                addLog(`${name} openly declared Sheep!`);
+            }
+            if (card.id == BLOOD.id) {
+                addLog(`${name} openly declared Blood!`);
+            }
+            if (card.id == DOUBLER.id) {
+                addLog(`${name} openly declared Doubler!`);
+            }
+        }
+        if (name == 'You') {
+            for(const card of declarations["closed_declarations"]) {
+                if (card.id == PIG.id) {
+                    addLog(`${name} secretly declared Pig!`);
+                }
+                if (card.id == SHEEP.id) {
+                    addLog(`${name} secretly declared Sheep!`);
+                }
+                if (card.id == BLOOD.id) {
+                    addLog(`${name} secretly declared Blood!`);
+                }
+                if (card.id == DOUBLER.id) {
+                    addLog(`${name} secretly declared Doubler!`);
+                }
+            }
+        } else {
+            if (declarations["closed_declarations"].length > 0) {
+                addLog(`${name} secretly declared ${declarations["closed_declarations"].length} card(s)!`);
+            }
+        }
+    }
 
     const handleNextPlayer = () => {
         // Logic to move to the next player, for example, using a round-robin approach.
@@ -162,7 +263,11 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
             axios.post(API_URL + '/next_player', {'id' : gameId}).then((response) => {
                 const data = response.data;
                 const move = data.move;
-                addLog(`Round ${roundCount+1}: ` + `${players[currentPlayerIndex].name} played ${move.rank} of ${move.suit}.`);
+                if (isDeclarationPhase) {
+                    addDeclarationsLog(players[currentPlayerIndex].name, move)
+                } else {
+                    addLog(`Round ${roundCount+1}: ` + `${players[currentPlayerIndex].name} played ${move.rank} of ${move.suit}.`);
+                }
                 fetchGameStates(gameId);
                 // setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
             }).catch((error) => {
@@ -404,7 +509,9 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
         {/* Bottom Player */}
         <View style={[styles.playerContainer, styles.bottomPlayer]}>
             <Hand hand={players[0].hand} rotation={0} visible={true} 
-                selectedCard={selectedCard} setSelectedCard={setSelectedCard}/>
+                selectable={isYourTurn && !isDeclarationPhase}
+                selectedCard={isYourTurn ? selectedCard : null}
+                setSelectedCard={setSelectedCard}/>
             <View style={[styles.avatarNameContainer, 
                 currentPlayerIndex===0 && styles.currentPlayerWrapper,]} >
             <Image source={players[0].avatar ? players[0].avatar : defaultAvatars[0]} style={styles.avatar} />

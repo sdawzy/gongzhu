@@ -289,7 +289,12 @@ class Gongzhu(gym.Env):
         # First, check if the player has the declared cards
         open_declarations = CardCollection(declarations.get_open_declarations())
         closed_declarations = CardCollection(declarations.get_all_closed_declarations())
-        if not open_declarations in hand or not closed_declarations in hand:
+        # print(open_declarations)
+        # print(closed_declarations)
+        # print([card for card in hand])
+        # print(open_declarations in hand)
+        # print(closed_declarations in hand)
+        if (not open_declarations in hand) or (not closed_declarations in hand):
             return False
         # Ensure there is no intersection between open and closed declarations
         if not open_declarations.intersect(closed_declarations).is_empty():
@@ -344,7 +349,7 @@ class Gongzhu(gym.Env):
         old_player_index = self._current_player_index
         self._has_moved[old_player_index] = True
         # Check if right now is the declaration phase
-        if self.declaration_phase():
+        if self.is_declaration_phase():
             print(f"player {old_player_index} is making a declaration")
             declarations : Declaration = self._players[self._current_player_index].policy.decide_declarations(
                 hand=self._players[self._current_player_index].get_hand(),
@@ -416,7 +421,7 @@ class Gongzhu(gym.Env):
             "history": self._history,
             "is_declaration_phase": self._declaration_phase} 
     
-    def declaration_phase(self):
+    def is_declaration_phase(self):
         return self._declaration_phase
 
     def is_end_episode(self) -> bool:
@@ -522,16 +527,21 @@ class Gongzhu(gym.Env):
         assert self.is_your_turn() , \
                 f"It's not your turn: player {self._current_player_index}"
 
-        assert action in self.legal_moves(self._players[self._current_player_index].get_hand(), self._playedCardsThisRound), \
-            f"Illegal move: {action} for player {self._current_player_index} \
-                Hand of player {self._current_player_index} is \
-                {np.asarray(self._players[self._current_player_index].get_hand())}. \
-                    Legal moves are {np.asarray(self.legal_moves(self._players[self._current_player_index].get_hand(), self._playedCardsThisRound))} \
-                        Played cards this round are {np.asarray(self._playedCardsThisRound)}"
+        if not self.is_declaration_phase():
+            assert action in self.legal_moves(self._players[self._current_player_index].get_hand(), self._playedCardsThisRound), \
+                f"Illegal move: {action} for player {self._current_player_index} \
+                    Hand of player {self._current_player_index} is \
+                    {np.asarray(self._players[self._current_player_index].get_hand())}. \
+                        Legal moves are {np.asarray(self.legal_moves(self._players[self._current_player_index].get_hand(), self._playedCardsThisRound))} \
+                            Played cards this round are {np.asarray(self._playedCardsThisRound)}"
 
         score_diff = self.score_diff()
 
-        self.play_selected_card(action)
+        if not self.is_declaration_phase():
+            self.play_selected_card(action)
+        else:
+            self.make_declarations(action)
+
         self.play_until_your_turn()
 
         new_score_diff = self.score_diff()

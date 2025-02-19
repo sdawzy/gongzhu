@@ -67,6 +67,9 @@ class Card(np.ndarray):
 
     def __str__(self):
         return f"{self.suit}_{self.rank}"
+    
+    def __repr__(self):
+        return f"{self.suit}_{self.rank}"
 
     def __eq__(self, other):
         if other is None:
@@ -162,6 +165,8 @@ class CardCollection(np.ndarray):
         return self.cards[index]
 
     def __contains__(self, other):
+        if np.asarray(other).sum() < 1:
+            return True
         index = np.argmax(other)  # Gets the position where card == 1
         return np.asarray(self)[index] > 0  # Check if the count is greater than 0
 

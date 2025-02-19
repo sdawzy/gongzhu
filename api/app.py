@@ -59,15 +59,29 @@ def step():
     data : dict = request.json
     id = data.get('id')
     game : Gongzhu = get_game_by_id(id)
-    suit = data.get('suit')  # Get suit from the query parameter
-    rank = data.get('rank')  # Get rank from the query parameter
-    action = Card(suit=suit, rank=rank)  # Create a tuple representing the action to be taken by the player
-    
-    if not game.is_legal_move(game.get_player_by_index(0), action):
-        return jsonify({'message': 'Invalid move'}), 400
-    
-    game.step(action)  # Step the game with the provided action
-    return jsonify({'message': "stepped to the next state"}), 200
+    if game.is_declaration_phase():
+        open_declarations = data.get('open_declarations')
+        open_declarations = [Card(suit=card['suit'], rank=card['rank']) for card in open_declarations]
+        closed_declarations = data.get('closed_declarations')
+        closed_declarations = [{"card" : Card(suit=card['suit'], rank=card['rank']), "revealed" : False} 
+            for card in closed_declarations]
+        declarations = Declaration(open_declarations=open_declarations, closed_declarations=closed_declarations)
+
+        if game.is_legal_declarations(player=game.get_player_by_index(0), declarations=declarations):
+            game.step(declarations)
+            return jsonify({'message': 'Declarations made successfully'}), 200
+        else:
+            return jsonify({'message': 'Invalid declarations'}), 400
+    else:
+        suit = data.get('suit')  # Get suit from the query parameter
+        rank = data.get('rank')  # Get rank from the query parameter
+        action = Card(suit=suit, rank=rank)  # Create a tuple representing the action to be taken by the player
+        
+        if not game.is_legal_move(game.get_player_by_index(0), action):
+            return jsonify({'message': 'Invalid move'}), 400
+        
+        game.step(action)  # Step the game with the provided action
+        return jsonify({'message': "stepped to the next state"}), 200
 
 @app.route('/get_game_state', methods=['POST'])
 def get_game_state_route():
@@ -128,7 +142,7 @@ def make_declarations_route():
         for card in closed_declarations]
     declarations = Declaration(open_declarations=open_declarations, closed_declarations=closed_declarations)
 
-    if game.is_legal_declarations(declarations):
+    if game.is_legal_declarations(player=game.get_player_by_index(0), declarations=declarations):
         game.make_declarations(declarations)
         return jsonify({'message': 'Declarations made successfully'}), 200
     else:
