@@ -42,7 +42,7 @@ const GameOnline : React.FC = () => {
           </View>
           <Text>Display Mode:</Text>
           <View style={{ flexDirection: "row", marginTop: 10, justifyContent: "space-between" }}>
-          {["full", "state"].map((option) => (
+          {["full", "state-only"].map((option) => (
             <TouchableOpacity
               key={option}
               onPress={() => setGameMode(option)}

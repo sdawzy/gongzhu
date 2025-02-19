@@ -1,27 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import Card from '../components/Card'
+import {PIG, SHEEP, BLOOD, BlOODS, DOUBLER, SPECIAL_CARDS} from '../components/specialCards'
 import Hand from '../components/Hand'
 import { CardInterface } from '../types';
 
-const PIG : CardInterface = { suit : "spade", rank : "12", id : "spade_12"}
-const SHEEP : CardInterface = { suit : "diamond", rank : "11", id : "diamond_11"}
-const DOUBLER : CardInterface = { suit : "club", rank : "10", id : "club_10"}
-const BlOODS : CardInterface[] = [
-  { suit : "heart", rank : "02", id : "heart_02"},
-  { suit : "heart", rank : "03", id : "heart_03"},
-  { suit : "heart", rank : "04", id : "heart_04"},
-  { suit : "heart", rank : "05", id : "heart_05"},
-  { suit : "heart", rank : "06", id : "heart_06"},
-  { suit : "heart", rank : "07", id : "heart_07"},
-  { suit : "heart", rank : "08", id : "heart_08"},
-  { suit : "heart", rank : "09", id : "heart_09"},
-  { suit : "heart", rank : "10", id : "heart_10"},
-  { suit : "heart", rank : "11", id : "heart_11"},
-  { suit : "heart", rank : "12", id : "heart_12"},
-  { suit : "heart", rank : "13", id : "heart_13"},
-  { suit : "heart", rank : "14", id : "heart_14"},
-]
+// const PIG : CardInterface = { suit : "spade", rank : "Queen", id : "spade_12"}
+// const SHEEP : CardInterface = { suit : "diamond", rank : "Jack", id : "diamond_11"}
+// const DOUBLER : CardInterface = { suit : "club", rank : "10", id : "club_10"}
+
 
 const HandExample1: CardInterface[] = [
   PIG,
@@ -41,7 +28,7 @@ const RulesPage: React.FC = () => {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <Text style={styles.title}>Rules of Gongzhu</Text>
-
+      <Text style={styles.title}>By Yue Zhang</Text>
       <Text style={styles.text}>
         Gongzhu (lit. "Pushing the Pig") is a traditional Chinese card game. It is usually played by 4 players with the standard deck of 52 playing cards. 
          The goal of Gongzhu is to score the highest points by<Text style={styles.highlight}> avoiding penalty cards</Text>  and <Text style={styles.highlight}>collecting beneficial ones</Text>.
@@ -77,7 +64,7 @@ const RulesPage: React.FC = () => {
       <Text style={styles.bulletedList}>  - 5 to 10 of Heart are <Text style={styles.highlight}>-10</Text> points each. </Text>
       <Hand hand={BlOODS.slice(3,9)} spacing={100} selectable={false}/>
       <Text style={styles.bulletedList}>  - Jack, Queen, King and Ace of Heart worth <Text style={styles.highlight}>-20, -30, -40 and -50</Text> points, respectively. </Text>
-      <Hand hand={BlOODS.slice(10,13)} spacing={100} selectable={false}/>
+      <Hand hand={BlOODS.slice(9,13)} spacing={100} selectable={false}/>
       <Text style={styles.bulletedList}>- Ten of Club (♣): <Text style={styles.highlight}>Known as the Doubler.</Text> Your score will double if you collect the Doubler, no matter it is positive or negative.</Text>
       <Card card={DOUBLER}/>
       <Text style={styles.bulletedList}>- All the other cards do not have any values.</Text>
@@ -114,6 +101,31 @@ const RulesPage: React.FC = () => {
       <Text style={styles.highlight}>A team wins by reaching or exceeding +1000 points. Conversely, a team loses if their score falls to or below -1000 points.</Text>
       </Text>
 
+      <Text style={styles.sectionTitle}>Declaration Mode</Text>
+      <Text style={styles.text}>
+       To make the game more exciting, you can <Text style={styles.highlight}>enable card declarations</Text> in the beginning of the game!
+       Now there is an extra <Text style={styles.highlight}>declaration phase</Text> before the first round of game. During the declaration phase, 
+       each player takes turns to decide whether to <Text style={styles.highlight}>declare special card(s)</Text> in their hand.
+      </Text>
+      <Text style={styles.text}>
+       The special cards are <Text style={styles.highlight}>the Pig, the Sheep, the Big Blood (Ace of Heart) and the Doubler.</Text>
+      </Text>  
+      <Hand hand={SPECIAL_CARDS} spacing={100} selectable={false}/>
+      <Text style={styles.text}>
+       If a player decides to declare one of those special cards, they can either declare it <Text style={styles.highlight}>secretly (closedly)</Text> or <Text style={styles.highlight}>openly</Text>. 
+      </Text>
+      <Text style={styles.bulletedList}> - A <Text style={styles.highlight}>secretly delcared</Text> card has <Text style={styles.highlight}>doubled (times 2)</Text> effect. 
+      That is to say, a secretly declared Pig is -200 instead of -100, a secretly declared Sheep is +200 instead of +100, a secretly declared Doubler quadruple one's score, and 
+      a secretly declared Big Blood causes all Bloods' scores to double. 
+      When one secretly declares a card, they does not need to show that card until that card is played. </Text>
+      <Text style={styles.bulletedList}> - A <Text style={styles.highlight}>openly delcared</Text> card has <Text style={styles.highlight}>quadrupled (times 4)</Text> effect!  
+      When one secretly declares a card, they must always show that declared card. </Text>
+      <Text style={styles.text}>
+       Note that in order to prevent openly declared cards from being too overpowered,
+       <Text style={styles.highlight}>it is not allowed to play an openly card in the first round of the suit of that card (unless that card is the only one in that suit).</Text> 
+       For example, one cannot play an openly declared Pig in the first round of spade, or an openly declared Doubler in the first round of Heart.
+      </Text>      
+      
       <Text style={styles.sectionTitle}>Have fun playing Gongzhu!</Text>
       {/* <Text style={styles.sectionTitle}>Tips</Text>
       <Text style={styles.text}>

@@ -13,9 +13,9 @@ const App: React.FC = () => {
     <NavigationContainer>
       <Stack.Navigator initialRouteName="IndexPage">
         <Stack.Screen name="IndexPage" component={IndexPage} options={{ title: 'Gongzhu Emulator' }} />
-        <Stack.Screen name="GamePage" component={GamePage} options={{ title: 'Card Game' }} />
-        <Stack.Screen name="GameOnline" component={GameOnline} options={{ title: 'Online Game' }} />
-        <Stack.Screen name="RulesPage" component={RulesPage} options={{ title: 'Game Rules' }} />
+        <Stack.Screen name="GamePage" component={GamePage} options={{ title: 'Game' }} />
+        <Stack.Screen name="GameOnline" component={GameOnline} options={{ title: 'Have fun Gongzhu!' }} />
+        <Stack.Screen name="RulesPage" component={RulesPage} options={{ title: 'Gongzhu Rules' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

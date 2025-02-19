@@ -1,7 +1,7 @@
 # Vectorized version of the player class
 # By Yue Zhang, Feb 11, 2025
 import numpy as np
-from .card import Card, CardCollection, Hand, EMPTY_CARD
+from .card import Card, CardCollection, Hand, EMPTY_CARD, one_hot_vector
 from .policy import Policy, RandomPolicy
 from typing import List, TYPE_CHECKING
 from gymnasium import Env
@@ -231,19 +231,22 @@ class Player:
             [np.asarray(self._hand),
             np.asarray(self._collectedCards),
             np.asarray(self._playedCards),
-            np.asarray(self._currentPlayedCard)
-            # np.asarray(self._closeDeclaredCards),
-            # np.asarray(self._openDeclaredCards)
+            np.asarray(self._currentPlayedCard),
+            np.asarray(CardCollection(self._declarations.get_all_closed_declarations())),
+            np.asarray(CardCollection(self._declarations.get_open_declarations()))
             ]
         )
 
     @property
     def vec_partial(self) -> np.array:
         return np.array( 
-            [self._collectedCards,
-            self._playedCards,
-            self._currentPlayedCard
-            # self._openDeclaredCards
+            [
+            np.asarray(self._collectedCards),
+            np.asarray(self._playedCards),
+            np.asarray(self._currentPlayedCard),
+            np.asarray(CardCollection(self._declarations.get_revealed_closed_declarations())),
+            np.asarray(CardCollection(self._declarations.get_open_declarations())),
+            one_hot_vector(length=52, location=0) * self._declarations.num_unrevealed
             ]
         )
 

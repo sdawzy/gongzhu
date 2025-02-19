@@ -89,13 +89,13 @@ class Gongzhu(gym.Env):
         # 4. First player each round (List of indices)
         # Other meta information:
         # 5. Declaration phase (True or False)
-        # 6. Current round number (1-13)
         self._render_mode : str = render_mode  # "human" or "rgb_array"
 
         self.observation_space = Dict(
             {"agent_info": Box(0, 1, shape=(52, 6)), 
-            "players_info": Box(0, 1, shape=(3, 52, 4)),
+            "players_info": Box(0, 1, shape=(3, 52, 6)),
             "history": Sequence(Box(0, 1, shape=(52,))),
+            "first_player_indices": Sequence(Discrete(4)),
             "is_declaration_phase": Space()},
         )
 
@@ -592,6 +592,8 @@ class Gongzhu(gym.Env):
         reward = new_score_diff - score_diff  
         if not self.is_end_episode():
             reward /= 10
+        else:
+            reward = new_score_diff
 
         # Return the new state, reward, and whether the game is over
         return self.to_state(), reward, self.is_end_episode(), False, {}

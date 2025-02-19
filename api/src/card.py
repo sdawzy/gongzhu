@@ -12,7 +12,6 @@ SUITS = ["club", "diamond", "heart", "spade"]
 RANKS = ["2", "3", "4", "5", "6", "7", "8", "9",
             "10", "Jack", "Queen", "King", "Ace"]
 
-
 def one_hot_vector(length, location) -> np.array:
     # Create a vector of zeros with a length of length
     vector = np.zeros(length, dtype=int)
@@ -25,7 +24,6 @@ def one_hot_to_value(vector):
 
 # Card is parametrized as a one-hot vector
 class Card(np.ndarray):
-
     def __new__(cls, rank=None, suit=None, value=None):
         if value is not None:
             if not (0 <= value < SUITE_SIZE):
@@ -125,7 +123,6 @@ class Card(np.ndarray):
 # Abstract class for collections of cards
 # It is a vector of {0,1}^52
 class CardCollection(np.ndarray):
-    
     def __new__(cls, cards = None):
         obj = np.zeros(52, dtype=int).view(cls)
 
