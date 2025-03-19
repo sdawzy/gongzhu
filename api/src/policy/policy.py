@@ -3,10 +3,10 @@
 from typing import List, TYPE_CHECKING
 from abc import ABC, abstractmethod
 import numpy as np
-from ..declaration import Declaration
-from ..card import Card, CardCollection
-from ..card import PIG, SHEEP, DOUBLER, BLOOD, PIGPEN, SHEEPPEN, DOUBLERCATCHER
-from ..card import SAFESPADE, SAFECLUB, SAFEDIAMOND
+from declaration import Declaration
+from card import Card, CardCollection
+from card import PIG, SHEEP, DOUBLER, BLOOD, PIGPEN, SHEEPPEN, DOUBLERCATCHER
+from card import SAFESPADE, SAFECLUB, SAFEDIAMOND
 
 
 if TYPE_CHECKING:
@@ -14,9 +14,12 @@ if TYPE_CHECKING:
     
 
 class Policy(ABC):
-    def __init__(self, env: 'Env', epsilon: float = 0.05):
-        self.env = env
+    def __init__(self, epsilon: float = 0.05):
+        # self.env = env
         self.epsilon = epsilon
+    
+    def trainer(self):
+        pass
 
     @abstractmethod
     def decide_action(self, 
@@ -85,5 +88,18 @@ class Policy(ABC):
                 ret.add_card(card_)
         return ret
 
-    def getCurrentLargest(self, playedCards: List[Card]) -> Card:
-        return self.env.find_largest_card(playedCards)
+    def getCurrentLargest(self, played_cards: List[Card]) -> Card:
+        # Return None if no card has been played yet
+        if len(played_cards) == 0:
+            return None
+        largest_card = played_cards[0]
+        for i in range(1, len(played_cards)):
+            card = played_cards[i]
+            if card.get_suit() != largest_card.get_suit():
+                continue
+            if card > largest_card:
+                largest_card = card
+        return largest_card
+    
+    def getCardsPlayedThisRound(self, history):
+        return history[len(history)//4:]

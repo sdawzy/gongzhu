@@ -1,10 +1,10 @@
 # Ok let me try to rewrite everything using gym.Env
 # By Yue Zhang, Feb 11, 2025
 # Updated Feb 18, 2025
-from .card import Hand, Card, CardCollection, Deck, PIG, SHEEP, BLOOD, DOUBLER, SPECIAL_CARDS, EMPTY_CARD
-from .player import Player
-from .policy import Policy, RandomPolicy
-from .declaration import Declaration
+from card import Hand, Card, CardCollection, Deck, PIG, SHEEP, BLOOD, DOUBLER, SPECIAL_CARDS, EMPTY_CARD
+from player import Player
+from policy import Policy, RandomPolicy
+from declaration import Declaration
 
 from typing import List, TYPE_CHECKING, Any, Generic, SupportsFloat, TypeVar
 from random import Random
@@ -208,6 +208,11 @@ class Gongzhu(gym.Env):
                 elif card.get_rank() == self.BLOOD.get_rank():
                     self._blood_effect = 4.0
 
+    # Get current legal moves of the agent
+    def agent_legal_moves(self) -> CardCollection:
+        agent_hand = self._players[0].get_hand()
+        return self.legal_moves(agent_hand, self._playedCardsThisRound)
+
     # Get the legal moves
     def legal_moves(self, hand : Hand, played_cards : List[Card]) \
         -> CardCollection:
@@ -405,7 +410,7 @@ class Gongzhu(gym.Env):
         legal_moves = self.legal_moves(self._players[self._current_player_index].get_hand(), self._playedCardsThisRound)
         move : Card = self._players[self._current_player_index].policy.decide_action(
             legal_moves=legal_moves, 
-            game_info=self.to_dict()
+            game_info=self.to_state()
         )
         if move in SPECIAL_CARDS:
             self.update_effects()
@@ -460,6 +465,7 @@ class Gongzhu(gym.Env):
                  self._players[2].vec_partial,
                  self._players[3].vec_partial]),
             "history": self._history,
+            "first_player_indices": self._first_player_indices,
             "is_declaration_phase": self._declaration_phase} 
     
     def is_declaration_phase(self):

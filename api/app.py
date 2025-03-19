@@ -1,3 +1,5 @@
+# API for the Gongzhu environment
+# By Yue Zhang, Jan 27, 2025
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 # from typing import List, dict

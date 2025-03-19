@@ -1,6 +1,6 @@
 # Declaration Interface
 # By Yue Zhang, Feb 18, 2025
-from .card import Card, SPECIAL_CARDS
+from card import Card, SPECIAL_CARDS
 from typing import List
 
 class Declaration:

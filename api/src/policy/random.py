@@ -1,8 +1,8 @@
 from typing import List, TYPE_CHECKING
-from ..card import Card, CardCollection
-from ..declaration import Declaration
-from .policy import Policy
-from ..card import PIG, SHEEP, DOUBLER, BLOOD
+from card import Card, CardCollection
+from declaration import Declaration
+from policy import Policy
+from card import PIG, SHEEP, DOUBLER, BLOOD
 import numpy as np
 from random import random
 

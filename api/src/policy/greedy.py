@@ -1,10 +1,10 @@
 from typing import List, TYPE_CHECKING
-from ..card import Card, CardCollection
-from ..card import PIG, SHEEP, DOUBLER, PIGPEN, BLOOD
-from ..declaration import Declaration
+from card import Card, CardCollection
+from card import PIG, SHEEP, DOUBLER, PIGPEN, BLOOD
+from declaration import Declaration
 from random import random
 import numpy as np
-from .policy import Policy
+from policy import Policy
 
 # Simple greedy policy
 # Only aims to minimize own loss
@@ -26,8 +26,9 @@ class GreedyPolicy(Policy):
         
         
         cardToPlay = None
-        cardsPlayedThisRound = game_info['cardsPlayedThisRound']
-        cardsPlayedThisRound = [Card(card['rank'], card['suit']) for card in cardsPlayedThisRound ]
+        # cardsPlayedThisRound = game_info['cardsPlayedThisRound']
+        cardsPlayedThisRound = self.getCardsPlayedThisRound(game_info['history'])
+        # cardsPlayedThisRound = [Card(card['rank'], card['suit']) for card in cardsPlayedThisRound ]
         # If I starts the round
         if len(cardsPlayedThisRound) == 0:  
             # If I don't have the pig
@@ -48,7 +49,7 @@ class GreedyPolicy(Policy):
                 if current_suit == "spade":
                     spadesWithoutPig = self.getCardsExcludingOneCard(legal_moves, PIG)
                     if PIG in legal_moves:
-                        if self.env.find_largest_card(cardsPlayedThisRound) in PIGPEN:
+                        if self.getCurrentLargest(cardsPlayedThisRound) in PIGPEN:
                             cardToPlay = PIG
                         else:
                             cardToPlay = spadesWithoutPig[-1]
@@ -64,7 +65,7 @@ class GreedyPolicy(Policy):
                 if current_suit == "club":
                     clubsWithoutDoubler = self.getCardsExcludingOneCard(legal_moves, DOUBLER)
                     if DOUBLER in legal_moves:
-                        if self.env.find_largest_card(cardsPlayedThisRound) > DOUBLER:
+                        if self.getCurrentLargest(cardsPlayedThisRound) > DOUBLER:
                             cardToPlay = DOUBLER
                         else:
                             cardToPlay = clubsWithoutDoubler[-1]
@@ -79,13 +80,13 @@ class GreedyPolicy(Policy):
                 
                 if current_suit == "diamond":
                     if SHEEP in legal_moves:
-                        if len(cardsPlayedThisRound) == 3 and self.env.find_largest_card(cardsPlayedThisRound) < SHEEP:
+                        if len(cardsPlayedThisRound) == 3 and self.getCurrentLargest(cardsPlayedThisRound) < SHEEP:
                             cardToPlay = SHEEP
                         else:
                             diamondsWithoutSheep = self.getCardsExcludingOneCard(legal_moves, SHEEP)
                             cardToPlay = diamondsWithoutSheep.get_one_random_card()
                     else:
-                        if self.env.find_largest_card(cardsPlayedThisRound) < SHEEP:
+                        if self.getCurrentLargest(cardsPlayedThisRound) < SHEEP:
                             cardToPlay = legal_moves[-1]
                         else:
                             smallDiamonds = self.getDiamondsSmallerThanSheep(legal_moves)
@@ -95,7 +96,7 @@ class GreedyPolicy(Policy):
                 if current_suit == "heart":
                     smallerHearts = self.getCardsSmallerThan(
                         legal_moves,
-                        self.env.find_largest_card(cardsPlayedThisRound)
+                        self.getCurrentLargest(cardsPlayedThisRound)
                     )
                     if len(smallerHearts) > 0:
                         cardToPlay = smallerHearts[-1]

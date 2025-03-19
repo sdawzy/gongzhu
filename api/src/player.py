@@ -1,11 +1,11 @@
 # Vectorized version of the player class
 # By Yue Zhang, Feb 11, 2025
 import numpy as np
-from .card import Card, CardCollection, Hand, EMPTY_CARD, one_hot_vector
-from .policy import Policy, RandomPolicy
+from card import Card, CardCollection, Hand, EMPTY_CARD, one_hot_vector
+from policy import Policy, RandomPolicy
 from typing import List, TYPE_CHECKING
 from gymnasium import Env
-from .declaration import Declaration
+from declaration import Declaration
 if TYPE_CHECKING:
     from env import Gongzhu
     
