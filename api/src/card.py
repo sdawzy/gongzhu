@@ -75,7 +75,8 @@ class Card(np.ndarray):
     def __eq__(self, other):
         if other is None:
             return not np.any(np.asarray(self))
-        assert isinstance(other, Card ), "other must be Card"
+        assert isinstance(other, Card), "other must be Card. Got: %s. Other is %s" % (other.__class__.__name__,  other)
+        # assert hasattr(other, "value"), "other must be Card.
         return self.value == other.value
     
     def __ne__(self, other):

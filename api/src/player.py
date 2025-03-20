@@ -43,7 +43,7 @@ class Player:
         self._score = 0 
 
         self.rating = 1500
-        if self.rating is not None:
+        if rating is not None:
             self.rating = rating
 
     def score(self, env : Env) -> float:
@@ -66,7 +66,19 @@ class Player:
     def set_declarations(self, declarations : Declaration):
         self._declarations = declarations
 
+    def __repr__(self) -> str:
+        return f"Player(id={self.id}, name={self.name}, avatar_url={self.avatar_url}, policy={self.policy}, rating={self.rating})"
+    
     # Get methods
+    def get_rating(self):
+        return self.rating
+    
+    def set_rating(self, rating : float):
+        self.rating = rating
+    
+    def update_rating(self, change_rating : float):
+        self.rating += change_rating
+        
     def get_id(self):
         """Get the player's ID."""
         return self.id

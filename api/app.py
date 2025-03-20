@@ -2,13 +2,18 @@
 # By Yue Zhang, Jan 27, 2025
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-# from typing import List, dict
-from src.env import Gongzhu
-from src.card import Card
-from src.declaration import Declaration
-from src.policy import RandomPolicy, GreedyPolicy, Policy
-from src.player import Player
+import sys
+import torch
 import os
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "src")))
+
+# from typing import List, dict
+from env import Gongzhu
+from card import Card
+from declaration import Declaration
+from policy import RandomPolicy, GreedyPolicy, Policy, DMC
+from player import Player
 
 app = Flask(__name__)
 CORS(app)
@@ -25,13 +30,19 @@ def get_game_by_id(game_id):
 ai_policies = {
     "random": RandomPolicy,
     "greedy": GreedyPolicy,
+    "DMC": DMC,
     # Add more AI policies as needed
 }
 @app.route('/start_game', methods=['POST'])
 def start_game_route():
     # Get AI policy 
     data : dict = request.json
-    ai_policy : Policy = ai_policies[data.get('ai')]
+    ai_policy : Policy = ai_policies[data.get('ai')]()
+    if data.get('ai') == "DMC":
+        checkpoint_state = torch.load(
+            "src/gongzhuai_checkpoints/gongzhuai/weights_10027.ckpt"
+        )
+        ai_policy.load_state_dict(checkpoint_state)
     auto = data.get('auto')
     declaration = data.get('declaration')
     print(f"Declaration is {declaration}")
@@ -41,13 +52,13 @@ def start_game_route():
     # game.start_game()  # Start a new game
     game.reset(ai_players= [
                 Player(id="You", name="You", avatar_url="avatar_url1", 
-                policy=ai_policy(env=game)),
+                policy=ai_policy),
                 Player(id="Panda", name="Panda", avatar_url="avatar_url2", 
-                policy=ai_policy(env=game)),
+                policy=ai_policy),
                 Player(id="Penguin", name="Penguin", avatar_url="avatar_url3",
-                policy=ai_policy(env=game)),
+                policy=ai_policy),
                 Player(id="Elephant", name="Elephant", avatar_url="avatar_url4",
-                policy=ai_policy(env=game)),
+                policy=ai_policy),
         ], auto=auto)
 
     games[game.get_id()] = game  # Store the game in the dictionary
