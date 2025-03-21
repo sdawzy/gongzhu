@@ -51,6 +51,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
         "doubler": 'no',
         "blood": 'no'
     });
+    const [actionValue, setActionValue] = useState<number | null>(null);
     // If deployed, use the api from the environment variable
     // const API_URL = Constants.expoConfig?.extra?.apiUrl;
     const API_URL = "http://0.0.0.0:1926";
@@ -500,6 +501,39 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
             setReadyToLog(false);
         }
     }, [readyToLog]); 
+
+    // Update esimated action value
+    useEffect(() => {
+        if (selectedCard == null) {
+            setActionValue(null)
+        } else {
+            // Request estimated action value
+            const requestData = {
+                'id' : gameId,
+                'suit' : selectedCard.suit,
+                'rank' : selectedCard.rank,
+            }
+            axios.post(API_URL + '/evaluate', requestData).then((response) => {
+                const statusCode = response.status;
+                if (statusCode === 400) {
+                    // addLog("Invalid move by you. Please try again.");
+                    return;
+                }
+                const data = response.data;
+                const evaluation = data.evaluation;
+                setActionValue(evaluation);
+                // addLog(`Round ${roundCount+1}: ` + `you played ${currentPlayedCard.rank} of ${currentPlayedCard.suit}.`);
+                // fetchGameStates(gameId);
+                // setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
+            }).catch((error) => {
+                // if (error.status === 400 ) {
+                //     addLog("Invalid move by you. Please try again.");
+                //     return;
+                // }
+                // console.error('Error fetching playing card: ', error);
+            });            
+        }
+    }, [selectedCard]);
     
 
     // Add hotkey for the center button
@@ -593,13 +627,14 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
                 setSelectedCard={setSelectedCard}/>
             <View style={[styles.avatarNameContainer, 
                 currentPlayerIndex===0 && styles.currentPlayerWrapper,]} >
-            <Image source={players[0].avatar ? players[0].avatar : defaultAvatars[0]} style={styles.avatar} />
-            <Text style={styles.playerName}>{players[0].name}</Text>
-            <Text style={styles.playerName}>Score : {players[0].score}</Text>
-            <Button
-                title={bottonTitle}
-                onPress={() => handleShowCollectedCards(players[0])}
-            />
+                
+                <Image source={players[0].avatar ? players[0].avatar : defaultAvatars[0]} style={styles.avatar} />
+                <Text style={styles.playerName}>{players[0].name}</Text>
+                <Text style={styles.playerName}>Score : {players[0].score}</Text>
+                <Button
+                    title={bottonTitle}
+                    onPress={() => handleShowCollectedCards(players[0])}
+                />
             </View>
         </View>
         {/* Played card of Bottom Player */}
@@ -691,6 +726,7 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
         </Modal>
 
         {/* Conditional Button */}
+            <Text style={styles.playerName}>Estimated Action Value : {actionValue}</Text>
             {loading?
              <Text>Loading...</Text> : 
              isEndEpisode? 

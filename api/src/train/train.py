@@ -66,8 +66,9 @@ def learn_old():
 def learn(learner_model : DMC,
           samples : List,
           optimizer : torch.optim.Optimizer,
-          flags : Flag):
-    targets = torch.Tensor(samples["final_reward"]) * 0.01
+          flags : Flag,
+          scale : float = 0.001):
+    targets = torch.Tensor(samples["final_reward"]) * scale
     # actions = torch.flatten(samples["action"], 0, 1)
     # states = torch.flatten(samples["state"], 0, 1)
     legal_moves = samples["legal_moves"]

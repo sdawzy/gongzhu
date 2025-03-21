@@ -88,6 +88,27 @@ class DMC(Policy):
 
         return cardToPlay
 
+    def action_value_estimate(self, 
+        legal_moves: CardCollection,
+        action: Card,
+        game_info: dict = None):
+
+        assert action in legal_moves, "action must be in legal moves."
+        history = game_info['history']
+        first_player_indices = game_info['first_player_indices']
+        agent_info = game_info['agent_info']
+        players_info = game_info['players_info']
+        
+        history = reshape_history(history, first_player_indices)
+        # Output should be a 52 x 1 vector
+        out = self.model(history=history, 
+                        agent_info=agent_info,
+                        player1_info=players_info[0],
+                        player2_info=players_info[1],
+                        player3_info=players_info[2])
+                
+        return out[action.value]
+
     def parameters(self):
         return self.model.parameters()
         

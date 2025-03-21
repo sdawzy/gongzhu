@@ -125,7 +125,6 @@ def create_buffers(flags : Flag, device_iterator):
 
 def sampler(n : int, models : List[Policy], agent_policy: Policy):
     env = Gongzhu()
-    n_models = len(models)
     buffers = {
         "state" : [],
         "action" : [],

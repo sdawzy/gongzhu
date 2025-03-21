@@ -568,6 +568,14 @@ class Gongzhu(gym.Env):
             else:
                 self.next_player()
 
+    # Estimate the action value based on a policy
+    def action_value_estimate(self, action: Card, policy: Policy) -> float:
+        return policy.action_value_estimate(
+            legal_moves=self.agent_legal_moves(),
+            action=action,
+            game_info=self.to_state()
+        )
+
     def step(self, action: ActType) \
         -> tuple[ObsType, SupportsFloat, bool, bool, dict[str, Any]]:
         # First, sanity check

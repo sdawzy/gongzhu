@@ -19,6 +19,14 @@ app = Flask(__name__)
 CORS(app)
 
 DB_DIR = "data/record.db"
+CHECKPOINT_DIR = "src/gongzhuai_checkpoints/gongzhuai/weights_10027.ckpt"
+
+checkpoint_state = torch.load(CHECKPOINT_DIR)
+
+dmc_policy = DMC()
+dmc_policy.load_state_dict(checkpoint_state)
+random_policy = RandomPolicy()
+greedy_policy = GreedyPolicy()
 # A dictionary to store ongoing games
 games : dict = {}
 # game : GongzhuGame = GongzhuGame(ai_policy=RandomPolicy)  # Initialize your game
@@ -28,21 +36,19 @@ def get_game_by_id(game_id):
     return games.get(game_id)
 
 ai_policies = {
-    "random": RandomPolicy,
-    "greedy": GreedyPolicy,
-    "DMC": DMC,
+    "random": random_policy,
+    "greedy": greedy_policy,
+    "DMC": dmc_policy,
     # Add more AI policies as needed
 }
 @app.route('/start_game', methods=['POST'])
 def start_game_route():
     # Get AI policy 
     data : dict = request.json
-    ai_policy : Policy = ai_policies[data.get('ai')]()
-    if data.get('ai') == "DMC":
-        checkpoint_state = torch.load(
-            "src/gongzhuai_checkpoints/gongzhuai/weights_10027.ckpt"
-        )
-        ai_policy.load_state_dict(checkpoint_state)
+    ai_policy : Policy = ai_policies[data.get('ai')]
+    # if data.get('ai') == "DMC":
+    #     checkpoint_state = torch.load(CHECKPOINT_DIR)
+    #     ai_policy.load_state_dict(checkpoint_state)
     auto = data.get('auto')
     declaration = data.get('declaration')
     print(f"Declaration is {declaration}")
@@ -172,9 +178,7 @@ def play_card_route():
 
     suit = data.get('suit')  # Get suit from the query parameter
     rank = data.get('rank')  # Get rank from the query parameter
-    
-    # print(request)
-    # print(suit, rank)
+
     card = Card(suit=suit, rank=rank)  # Create a card object
     if game.is_legal_move(game.get_player_by_index(0), card):
         game.play_selected_card(card)
@@ -194,6 +198,24 @@ def next_round_route():
     largest_and_round_count = game.next_round()  # Get the next round index and move from your game logic
     largest_index = largest_and_round_count['largestIndex']
     return jsonify({'message': 'Next round starts', 'largestIndex': largest_index}), 200
+
+@app.route('/evaluate', methods=['POST'])
+def evaluate_route():
+    data : dict = request.json
+    id = data.get('id')
+    game : Gongzhu = get_game_by_id(id)
+    if game.get_current_player_index() != 0:  # Check if it's the current player's turn
+        return jsonify({'message': 'It is not your turn'}), 403  # Return 403 Forbidden if it's not the current player's turn
+
+    suit = data.get('suit')  # Get suit from the query parameter
+    rank = data.get('rank')  # Get rank from the query parameter
+    
+    card = Card(suit=suit, rank=rank)  # Create a card object
+    if game.is_legal_move(game.get_player_by_index(0), card):
+        eval : torch.Tensor = game.action_value_estimate(action=card, policy=dmc_policy)
+        return jsonify({'evaluation': round(eval.item() * 1000, 3)}), 200
+    else:
+        return jsonify({'evaluation': -114514}), 200
 
 if __name__ == '__main__':
     # app.run(debug=True, host='0.0.0.0', port=1926)  # Run the Flask app
