@@ -166,6 +166,9 @@ class Player:
         self.add_card_to_played_cards(card)
         return self._hand.remove_card(card)
 
+    def duplicate(self):
+        return Player(policy=self.policy, name=self.name, avatar_url=self.avatar_url, rating=self.rating)
+
     def add_collected_card(self, card : Card):
         """
         Add a card to the player's collected cards.
