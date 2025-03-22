@@ -98,42 +98,18 @@ def play(players : List[Player], num_simulations : int, iteration, ratings, lock
             local_simulations += 1  
     
     # print(f"Local simulations: {local_simulations}")
-    
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description='GongzhuAI arena')
-    parser.add_argument('--num_players', default=20, type=int,
-                    help='Number of players per agent to simulate')
-    parser.add_argument('--num_simulations', default=114514, type=int,
-                        help='Number of simulations')    
-    parser.add_argument('--num_processes', default=8, type=int,
-                        help='Number of processes to simulate') 
-    args = parser.parse_args()
 
-    # Hyperparameters
-    num_players_per_policy = args.num_players
-    num_simulations = args.num_simulations
-    num_processes = args.num_processes
-
+def arena(policies : List[Policy], num_players : int,
+          num_simulations : int, num_processes : int):
     # Create players
-    random_players = [Player(policy=RandomPolicy()) for _ in range(num_players_per_policy)]
-    greedy_players = [Player(policy=GreedyPolicy(epsilon=0)) for _ in range(num_players_per_policy)]
-    checkpoint_state = torch.load(
-        "gongzhuai_checkpoints/gongzhuai/weights_10027.ckpt"
-    )
-    dmc_model = DMC()
-    dmc_model.load_state_dict(checkpoint_state)
-    dmc_players = [Player(policy=dmc_model) for _ in range(num_players_per_policy)]
-    players = random_players + greedy_players + dmc_players
-    # print(ratings)
-    
-    env = Gongzhu()
+    players_by_policies = [[Player(policy=policy) for _ in range(num_players_per_policy)] 
+        for policy in policies]
+    players = [player for players_by_policy in players_by_policies for player in players_by_policy ]
 
     # Initialize multithreading pool
     ctx = mp.get_context('spawn')
     # global ratings
     ratings = ctx.Array('f', [player.get_rating() for player in players])
-    players_lock = ctx.Lock()
     lock = mp.Lock()
     iteration = ctx.Value('i', 0)
     actor_processes : List[mp.Process] = []
@@ -159,37 +135,140 @@ if __name__ == "__main__":
     # Calculate elapsed time
     elapsed_time = time.time() - start_time
     print(f"Simulated {num_simulations} games with {num_processes} processes. Elapsed time: {elapsed_time} seconds")
-    random_player_ratings, random_player_mean, random_player_std = calculate_player_statistics(random_players)
-    print(f"Random Player ratings = {random_player_ratings}, \nMean = {random_player_mean}, std = {random_player_std}")
-    greedy_player_ratings, greedy_player_mean, greedy_player_std = calculate_player_statistics(greedy_players)
-    print(f"Greedy Player ratings = {greedy_player_ratings}, \nMean = {greedy_player_mean}, std = {greedy_player_std}")
-    dmc_player_ratings, dmc_player_mean, dmc_player_std = calculate_player_statistics(dmc_players)
-    print(f"DMC Player ratings = {dmc_player_ratings}, \nMean = {dmc_player_mean}, std = {dmc_player_std}")
 
     # Plot the results
     from matplotlib import pyplot as plt
-    # plt.scatter([1]*num_players_per_policy, random_player_ratings, label='Random Players')
-    # plt.scatter([2]*num_players_per_policy, greedy_player_ratings, label='Greedy Players')
-    # plt.scatter([3]*num_players_per_policy, dmc_player_ratings, label='DMC Players')
-    # plt.legend(loc='upper right')
-    # plt.show()
     fig, axes = plt.subplots(1, 2, figsize=(10, 6), gridspec_kw={'width_ratios': [3, 1]})
 
-    # Scatter plot
-    axes[0].scatter([1] * num_players_per_policy, random_player_ratings, label="Random Players", color="blue", alpha=0.6)
-    axes[0].scatter([2] * num_players_per_policy, greedy_player_ratings, label="Greedy Players", color="green", alpha=0.6)
-    axes[0].scatter([3] * num_players_per_policy, dmc_player_ratings, label="DMC Players", color="red", alpha=0.6)
-    axes[0].set_xticks([1, 2, 3])
-    axes[0].set_xticklabels(["Random", "Greedy", "DMC"])
+    # Whole picture of the simulation
+    # player_ratings, player_mean, player_std = calculate_player_statistics(players)
+    # print(f"Mean = {player_mean}, std = {player_std}")
+
+    for i, policy in enumerate(policies):
+        player_ratings, player_mean, player_std = calculate_player_statistics(players_by_policies[i])
+        print(f"{policy.get_label()}\nMean = {player_mean}, std = {player_std}")
+        # Scatter plot
+        axes[0].scatter([i+1] * num_players_per_policy, 
+            player_ratings, label=f"{policy.get_label()}", alpha=0.6)
+        # Histogram Plot
+        axes[1].hist(player_ratings, 
+            bins=20, alpha=0.6, orientation='horizontal', label=f"{policy.get_label()}")
+    
+    axes[0].set_xticks(range(1, len(policies)+1))
+    axes[0].set_xticklabels([policy.get_label() for policy in policies])
     axes[0].set_ylabel("Player Ratings")
     axes[0].set_title("Scatter Plot")
-
-    # Histogram Plot
-    axes[1].hist(random_player_ratings, bins=20, color="blue", alpha=0.6, orientation='horizontal', label="Random")
-    axes[1].hist(greedy_player_ratings, bins=20, color="green", alpha=0.6, orientation='horizontal', label="Greedy")
-    axes[1].hist(dmc_player_ratings, bins=20, color="red", alpha=0.6, orientation='horizontal', label="DMC")
     axes[1].set_title("Histograms")
     axes[1].legend()
 
     plt.tight_layout()
     plt.show()
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description='GongzhuAI arena')
+    parser.add_argument('--num_players', default=20, type=int,
+                    help='Number of players per agent to simulate')
+    parser.add_argument('--num_simulations', default=114514, type=int,
+                        help='Number of simulations')    
+    parser.add_argument('--num_processes', default=8, type=int,
+                        help='Number of processes to simulate') 
+    args = parser.parse_args()
+
+    # Hyperparameters
+    num_players_per_policy = args.num_players
+    num_simulations = args.num_simulations
+    num_processes = args.num_processes
+
+    checkpoint_state = torch.load(
+        "gongzhuai_checkpoints/gongzhuai/weights_10027.ckpt"
+    )
+    random_policy = RandomPolicy(label="Random")
+    greedy_policy = GreedyPolicy(label="Greedy")
+    dmc_0 = DMC(label="DMC_0")
+    dmc_1e4 = DMC(label="DMC_1e4")
+    dmc_1e4.load_state_dict(checkpoint_state)
+
+    # Run the arena simulations
+    arena(policies=[random_policy, greedy_policy, dmc_0, dmc_1e4],
+        num_players=num_players_per_policy,
+        num_processes=num_processes,
+        num_simulations=num_simulations)
+    # # Create players
+    # random_players = [Player(policy=RandomPolicy()) for _ in range(num_players_per_policy)]
+    # greedy_players = [Player(policy=GreedyPolicy(epsilon=0)) for _ in range(num_players_per_policy)]
+    # checkpoint_state = torch.load(
+    #     "gongzhuai_checkpoints/gongzhuai/weights_10027.ckpt"
+    # )
+    # dmc_1e4 = DMC()
+    # dmc_1e4.load_state_dict(checkpoint_state)
+    # dmc_players = [Player(policy=dmc_model) for _ in range(num_players_per_policy)]
+    # players = random_players + greedy_players + dmc_players
+    # # print(ratings)
+    
+    # env = Gongzhu()
+
+    # # Initialize multithreading pool
+    # ctx = mp.get_context('spawn')
+    # # global ratings
+    # ratings = ctx.Array('f', [player.get_rating() for player in players])
+    # players_lock = ctx.Lock()
+    # lock = mp.Lock()
+    # iteration = ctx.Value('i', 0)
+    # actor_processes : List[mp.Process] = []
+    # for i in range(num_processes):
+    #     actor = ctx.Process(
+    #         target=play,
+    #         args=(players, num_simulations, iteration, ratings, lock)
+    #     )
+    #     actor_processes.append(actor)
+
+    # # Start timer
+    # start_time = time.time()
+
+    # # Start all processes
+    # for actor in actor_processes:
+    #     actor.start()
+    # # Wait for all processes to finish
+    # for actor in actor_processes:
+    #     actor.join()
+        
+    # for i, player in enumerate(players):
+    #     player.set_rating(ratings[i])
+    # # Calculate elapsed time
+    # elapsed_time = time.time() - start_time
+    # print(f"Simulated {num_simulations} games with {num_processes} processes. Elapsed time: {elapsed_time} seconds")
+    # random_player_ratings, random_player_mean, random_player_std = calculate_player_statistics(random_players)
+    # print(f"Random Player ratings = {random_player_ratings}, \nMean = {random_player_mean}, std = {random_player_std}")
+    # greedy_player_ratings, greedy_player_mean, greedy_player_std = calculate_player_statistics(greedy_players)
+    # print(f"Greedy Player ratings = {greedy_player_ratings}, \nMean = {greedy_player_mean}, std = {greedy_player_std}")
+    # dmc_player_ratings, dmc_player_mean, dmc_player_std = calculate_player_statistics(dmc_players)
+    # print(f"DMC Player ratings = {dmc_player_ratings}, \nMean = {dmc_player_mean}, std = {dmc_player_std}")
+
+    # # Plot the results
+    # from matplotlib import pyplot as plt
+    # # plt.scatter([1]*num_players_per_policy, random_player_ratings, label='Random Players')
+    # # plt.scatter([2]*num_players_per_policy, greedy_player_ratings, label='Greedy Players')
+    # # plt.scatter([3]*num_players_per_policy, dmc_player_ratings, label='DMC Players')
+    # # plt.legend(loc='upper right')
+    # # plt.show()
+    # fig, axes = plt.subplots(1, 2, figsize=(10, 6), gridspec_kw={'width_ratios': [3, 1]})
+
+    # # Scatter plot
+    # axes[0].scatter([1] * num_players_per_policy, random_player_ratings, label="Random Players", color="blue", alpha=0.6)
+    # axes[0].scatter([2] * num_players_per_policy, greedy_player_ratings, label="Greedy Players", color="green", alpha=0.6)
+    # axes[0].scatter([3] * num_players_per_policy, dmc_player_ratings, label="DMC Players", color="red", alpha=0.6)
+    # axes[0].set_xticks([1, 2, 3])
+    # axes[0].set_xticklabels(["Random", "Greedy", "DMC"])
+    # axes[0].set_ylabel("Player Ratings")
+    # axes[0].set_title("Scatter Plot")
+
+    # # Histogram Plot
+    # axes[1].hist(random_player_ratings, bins=20, color="blue", alpha=0.6, orientation='horizontal', label="Random")
+    # axes[1].hist(greedy_player_ratings, bins=20, color="green", alpha=0.6, orientation='horizontal', label="Greedy")
+    # axes[1].hist(dmc_player_ratings, bins=20, color="red", alpha=0.6, orientation='horizontal', label="DMC")
+    # axes[1].set_title("Histograms")
+    # axes[1].legend()
+
+    # plt.tight_layout()
+    # plt.show()

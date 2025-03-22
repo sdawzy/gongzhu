@@ -25,8 +25,8 @@ def reshape_history(history, first_player_indices):
 
 class DMC(Policy):
 
-    def __init__(self, epsilon: float = 0.05, device: str = "cpu"):
-        super().__init__(epsilon=epsilon)
+    def __init__(self, label : str = None, epsilon: float = 0.05, device: str = "cpu"):
+        super().__init__(label=label, epsilon=epsilon)
         # self.epsilon = epsilon
         self.model = GongzhuDMC()
         self.device = torch.device(device)

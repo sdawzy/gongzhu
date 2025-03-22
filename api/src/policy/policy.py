@@ -14,9 +14,10 @@ if TYPE_CHECKING:
     
 
 class Policy(ABC):
-    def __init__(self, epsilon: float = 0.05):
+    def __init__(self, label : str = None, epsilon: float = 0):
         # self.env = env
         self.epsilon = epsilon
+        self.label = label
     
     def trainer(self):
         pass
@@ -38,6 +39,9 @@ class Policy(ABC):
         action: Card,
         game_info: dict = None) -> float:
         return 0
+
+    def get_label(self):
+        return self.label
 
     def __str___(self):
         return self.__class__.__name__

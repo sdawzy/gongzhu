@@ -107,11 +107,11 @@ def train(flags : Flag):
     T = flags.unroll_length
     B = flags.batch_size
 
-    # if flags.actor_device_cpu:
-    #     device_iterator = ['cpu']
-    # else:
-    #     device_iterator = range(flags.num_actor_devices)
-    #     assert flags.num_actor_devices <= len(flags.gpu_devices.split(',')), 'The number of actor devices can not exceed the number of available devices'
+    if flags.actor_device_cpu:
+        device_iterator = ['cpu']
+    else:
+        device_iterator = range(flags.num_actor_devices)
+        assert flags.num_actor_devices <= len(flags.gpu_devices.split(',')), 'The number of actor devices can not exceed the number of available devices'
 
     # # Initialize actor models
     # models : Dict[str, DMC] = {}
