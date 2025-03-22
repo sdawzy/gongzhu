@@ -181,7 +181,7 @@ if __name__ == "__main__":
     num_processes = args.num_processes
 
     checkpoint_state = torch.load(
-        "gongzhuai_checkpoints/gongzhuai/weights_10027.ckpt"
+        "gongzhuai_checkpoints/gongzhuai/weights_1e4.ckpt"
     )
     random_policy = RandomPolicy(label="Random")
     greedy_policy = GreedyPolicy(label="Greedy")

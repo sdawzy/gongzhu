@@ -20,8 +20,8 @@ class HistoryGRU(nn.Module):
     def forward(self, history : torch.Tensor):
         if len(history) == 0:
             return torch.zeros(self.output_size)
-        history = torch.stack(history)
-        gru_out, h_n = self.gru(history)
+        # history = torch.stack(history)
+        gru_out, h_n = self.gru(history.transpose(0, -2))
         gru_out = gru_out[-1,:]
         x = gru_out
         x = self.dense1(x)
@@ -49,6 +49,7 @@ class HistoryGRU(nn.Module):
 class InfoExtractor(nn.Module):
     def __init__(self, input_size=52, hidden_size=131, output_size=17):
         super().__init__()
+        self.input_size = input_size
         self.dense1 = nn.Linear(input_size, hidden_size)
         self.dense2 = nn.Linear(hidden_size, hidden_size)
         self.dense3 = nn.Linear(hidden_size, hidden_size)
@@ -56,7 +57,7 @@ class InfoExtractor(nn.Module):
         self.dense5 = nn.Linear(hidden_size, output_size)
     
     def forward(self, x : torch.Tensor):
-        x = torch.from_numpy(x.flatten()).float()  # Flatten the input tensor
+        x = x.flatten(start_dim=-2, end_dim=-1).float()  # Flatten the input tensor
         x = self.dense1(x)
         x = torch.relu(x)
         x = self.dense2(x)
@@ -101,6 +102,11 @@ class GongzhuDMC(nn.Module):
         player1_info_out = self.player1_info_extractor(player1_info)
         player2_info_out = self.player2_info_extractor(player2_info)
         player3_info_out = self.player3_info_extractor(player3_info)
+        # print(history.shape)
+        # print(history_out.shape)
+        # print(agent_info_out.shape)
+        # print(player1_info_out.shape)
+
         x = torch.cat([history_out, agent_info_out, 
                        player1_info_out, player2_info_out, player3_info_out], dim=-1)
         x = self.dense1(x)  

@@ -29,7 +29,7 @@ parser.add_argument('--savedir', default='gongzhuai_checkpoints',
                     help='Root dir where experiment data will be saved')
 
 # Hyperparameters
-parser.add_argument('--total_frames', default=10000, type=int,
+parser.add_argument('--total_frames', default=1000000, type=int,
                     help='Total environment frames to train for')
 parser.add_argument('--exp_epsilon', default=0.01, type=float,
                     help='The probability for exploration')

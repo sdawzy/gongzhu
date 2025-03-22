@@ -73,19 +73,30 @@ def learn(learner_model : DMC,
     # states = torch.flatten(samples["state"], 0, 1)
     legal_moves = samples["legal_moves"]
     states = samples['state']
-    outputs = torch.zeros(len(states))
-    for index in range(len(states)):
-        outputs[index] = learner_model.decide_action(legal_moves=legal_moves[index],
-                        game_info=states[index], return_value=True)
+    # Change the shape of the states
+    states = {
+        'history' : [state['history'] for state in states],
+        'first_player_indices' : [state['first_player_indices'] for state in states],
+        'agent_info' : [state['agent_info'] for state in states],
+        'players_info' : [[state['players_info'][i] for state in states] for i in range(3)],
+    }
+    # Batch-wise operations?
+    outputs = learner_model.decide_action(legal_moves=legal_moves, batch=True,
+                         game_info=states, return_value=True)
+
+    # outputs = torch.zeros(len(states))
+    # for index in range(len(states)):
+    #     outputs[index] = learner_model.decide_action(legal_moves=legal_moves[index],
+    #                      game_info=states[index], return_value=True)
     # print(outputs.shape)
     # print(targets.shape)
+
     loss = compute_loss(outputs, targets)
     optimizer.zero_grad()
     loss.backward()
     nn.utils.clip_grad_norm_(learner_model.parameters(), flags.max_grad_norm)
     optimizer.step()
     return loss.item(), None
-    pass
 
 def train(flags : Flag):
     """
@@ -104,8 +115,6 @@ def train(flags : Flag):
     checkpointpath = os.path.expandvars(
         os.path.expanduser('%s/%s/%s' % (flags.savedir, flags.xpid, f'model_{flags.training_device}.tar')))
 
-    T = flags.unroll_length
-    B = flags.batch_size
 
     if flags.actor_device_cpu:
         device_iterator = ['cpu']
@@ -257,6 +266,7 @@ def train(flags : Flag):
             # Sampler episodes
             samples = sampler(n = flags.batch_size, models=default_actor_models,
                               agent_policy=learner_model)
+            print(f"Sampler episodes took {timer() - start_time} seconds")
             # Train on the samples
             training_start_time = timer()
             loss, msr = learn(learner_model=learner_model,
@@ -266,7 +276,7 @@ def train(flags : Flag):
                 )
             training_time = timer() - training_start_time
             print(f"Training took {training_time} seconds")
-            frames += flags.batch_size
+            frames += flags.batch_size * 13
             # Save progress
             stats['loss'] = loss
             if timer() - last_checkpoint_time > flags.save_interval * 60:  
