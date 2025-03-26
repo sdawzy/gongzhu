@@ -19,7 +19,7 @@ app = Flask(__name__)
 CORS(app)
 
 DB_DIR = "data/record.db"
-CHECKPOINT_DIR = "src/gongzhuai_checkpoints/gongzhuai/weights_1e4.ckpt"
+CHECKPOINT_DIR = "src/gongzhuai_checkpoints/gongzhuai/weights_1e6_2.ckpt"
 
 checkpoint_state = torch.load(CHECKPOINT_DIR)
 

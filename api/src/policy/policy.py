@@ -113,3 +113,6 @@ class Policy(ABC):
     
     def getCardsPlayedThisRound(self, history):
         return history[len(history)//4:]
+    
+    def hasPlayedTheCard(card, history : List[Card]) -> bool:
+        return card in history

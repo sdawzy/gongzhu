@@ -6,11 +6,13 @@ if TYPE_CHECKING:
 
 # First, the model class
 class HistoryGRU(nn.Module):
-    def __init__(self, input_size = 52 * 4, hidden_size=131, output_size=17):
+    def __init__(self, input_size = 52 * 4, hidden_size=89, output_size=17,
+                bidirectional : bool = True):
         super().__init__()
         self.output_size = output_size
-        self.gru = nn.GRU(input_size=input_size, hidden_size=hidden_size, batch_first=True)
-        self.dense1 = nn.Linear(hidden_size, 255)
+        self.gru = nn.GRU(input_size=input_size, hidden_size=hidden_size, batch_first=True, bidirectional=True)
+        self.dense1 = nn.Linear(hidden_size * 2 * 13 if bidirectional else hidden_size * 13, 
+                      255)
         self.dense2 = nn.Linear(255, 255)
         self.dense3 = nn.Linear(255, 255)
         self.dense4 = nn.Linear(255, 255)
@@ -22,7 +24,12 @@ class HistoryGRU(nn.Module):
             return torch.zeros(self.output_size)
         # history = torch.stack(history)
         gru_out, h_n = self.gru(history.transpose(0, -2))
-        gru_out = gru_out[-1,:]
+        # gru_out = nn.utils.rnn.pad_packed_sequence(gru_out, batch_first=True)
+        # print(gru_out.shape)
+        # gru_out = gru_out[-1,:]
+        gru_out = torch.cat([gru_out[4 * i +3,:] for i in range(13)], dim=-1)
+        # gru_out = gru_out.reshape()
+        # print(gru_out.shape)
         x = gru_out
         x = self.dense1(x)
         x = torch.relu(x)
@@ -97,7 +104,7 @@ class GongzhuDMC(nn.Module):
                       player1_info : torch.Tensor,
                       player2_info : torch.Tensor,
                       player3_info : torch.Tensor):
-        history_out = self.history_gru(history)
+        history_out = self.history_gru(history) * 10
         agent_info_out = self.agent_info_extractor(agent_info)
         player1_info_out = self.player1_info_extractor(player1_info)
         player2_info_out = self.player2_info_extractor(player2_info)

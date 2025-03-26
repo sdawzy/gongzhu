@@ -171,7 +171,7 @@ if __name__ == "__main__":
                     help='Number of players per agent to simulate')
     parser.add_argument('--num_simulations', default=114514, type=int,
                         help='Number of simulations')    
-    parser.add_argument('--num_processes', default=8, type=int,
+    parser.add_argument('--num_processes', default=6, type=int,
                         help='Number of processes to simulate') 
     args = parser.parse_args()
 
@@ -181,16 +181,16 @@ if __name__ == "__main__":
     num_processes = args.num_processes
 
     checkpoint_state = torch.load(
-        "gongzhuai_checkpoints/gongzhuai/weights_1e4.ckpt"
+        "gongzhuai_checkpoints/gongzhuai/weights_1e6.ckpt"
     )
     random_policy = RandomPolicy(label="Random")
     greedy_policy = GreedyPolicy(label="Greedy")
     dmc_0 = DMC(label="DMC_0")
-    dmc_1e4 = DMC(label="DMC_1e4")
-    dmc_1e4.load_state_dict(checkpoint_state)
+    dmc_1e6 = DMC(label="DMC_1e6")
+    dmc_1e6.load_state_dict(checkpoint_state)
 
     # Run the arena simulations
-    arena(policies=[random_policy, greedy_policy, dmc_0, dmc_1e4],
+    arena(policies=[random_policy, greedy_policy, dmc_1e6],
         num_players=num_players_per_policy,
         num_processes=num_processes,
         num_simulations=num_simulations)
@@ -200,8 +200,8 @@ if __name__ == "__main__":
     # checkpoint_state = torch.load(
     #     "gongzhuai_checkpoints/gongzhuai/weights_10027.ckpt"
     # )
-    # dmc_1e4 = DMC()
-    # dmc_1e4.load_state_dict(checkpoint_state)
+    # dmc_1e6 = DMC()
+    # dmc_1e6.load_state_dict(checkpoint_state)
     # dmc_players = [Player(policy=dmc_model) for _ in range(num_players_per_policy)]
     # players = random_players + greedy_players + dmc_players
     # # print(ratings)

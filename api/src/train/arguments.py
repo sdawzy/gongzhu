@@ -29,7 +29,7 @@ parser.add_argument('--savedir', default='gongzhuai_checkpoints',
                     help='Root dir where experiment data will be saved')
 
 # Hyperparameters
-parser.add_argument('--total_frames', default=1000000, type=int,
+parser.add_argument('--total_frames', default=5000000, type=int,
                     help='Total environment frames to train for')
 parser.add_argument('--exp_epsilon', default=0.01, type=float,
                     help='The probability for exploration')
@@ -45,7 +45,7 @@ parser.add_argument('--max_grad_norm', default=40., type=float,
                     help='Max norm of gradients')
 
 # Optimizer settings
-parser.add_argument('--learning_rate', default=0.0001, type=float,
+parser.add_argument('--learning_rate', default=0.001, type=float,
                     help='Learning rate')
 parser.add_argument('--alpha', default=0.99, type=float,
                     help='RMSProp smoothing constant')

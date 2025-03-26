@@ -466,7 +466,8 @@ class Gongzhu(gym.Env):
                  self._players[3].vec_partial]),
             "history": self._history,
             "first_player_indices": self._first_player_indices,
-            "is_declaration_phase": self._declaration_phase} 
+            "is_declaration_phase": self._declaration_phase,
+            "scores": np.array([player.get_score(self) for player in self._players])} 
     
     def is_declaration_phase(self):
         return self._declaration_phase

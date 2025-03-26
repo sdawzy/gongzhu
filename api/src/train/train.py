@@ -83,7 +83,7 @@ def learn(learner_model : DMC,
     # Batch-wise operations?
     outputs = learner_model.decide_action(legal_moves=legal_moves, batch=True,
                          game_info=states, return_value=True)
-
+    nn.utils.clip_grad_norm_(learner_model.parameters(), flags.max_grad_norm)
     # outputs = torch.zeros(len(states))
     # for index in range(len(states)):
     #     outputs[index] = learner_model.decide_action(legal_moves=legal_moves[index],
