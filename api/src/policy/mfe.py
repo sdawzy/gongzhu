@@ -8,16 +8,22 @@ from declaration import Declaration
 from random import random
 import numpy as np
 from policy import Policy
-from policy.models import GongzhuDMC
+from policy.models import GongzhuMFE
+from policy.dmc import reshape_history, reshape_history_single
 import torch.nn.utils.rnn as rnn_utils
+import torch
 
 class ManualFeatureExtractor(Policy):
 
-    def __init__(self, label : str = None,
-                epsilon: float = 0.05):
+    def __init__(self, label : str = "MFE",
+                epsilon: float = 0.05,
+                n_features: int = 631,
+                device: str = "cpu"):
         super().__init__(label=label, epsilon=epsilon)
         # Number of extracted features
-        self.n_features = 700
+        self.device = device
+        self.n_features = n_features
+        self.model = GongzhuMFE(n_features=self.n_features)
 
     def extract_features(self, game_info : dict):
         # Extract relevant features from game_info
@@ -103,6 +109,75 @@ class ManualFeatureExtractor(Policy):
             features[B + 2] = 1      
         return features
 
+    def action_value_estimate(self, 
+        legal_moves: CardCollection,
+        action: Card,
+        game_info: dict):
 
-    def decide_action(self, action):
-        pass
+        assert action in legal_moves, "action must be in legal moves."
+
+        out = self.forward(game_info)
+                
+        return out[action.value]
+    def decide_action(self, 
+        legal_moves: CardCollection,
+        game_info: dict = None,
+        epsilon_greedy: bool = True,
+        return_value: bool = False,
+        batch : bool = False) -> Card:
+
+        out = self.forward(game_info, batch=batch)
+
+        # In return value mode, we can directly return a vector
+        if return_value:
+            return torch.amax(torch.from_numpy(np.array(legal_moves)) * out)
+            
+        # Sometimes play a random card
+        if epsilon_greedy and random() <= self.epsilon:
+            return legal_moves.get_one_random_card()
+
+        # # Filter out legal moves
+        # out = legal_moves * out 
+
+        # out = torch.from_numpy(legal_moves) * out.detach().numpy()
+        # Softmax output
+        out = torch.softmax(out, dim=0)
+        # Filter out legal moves
+        out = torch.from_numpy(legal_moves) * out
+        # Choose the best move
+        action = torch.argmax(out)
+
+        cardToPlay = Card(value=action)
+
+        return cardToPlay
+
+    def parameters(self):
+        return self.model.parameters()
+        
+    def decide_declarations(self, 
+        hand: CardCollection,
+        game_info: dict = None):
+        # TODO: implement declaration
+        return Declaration()
+
+    def __str___(self):
+        return f'MFE_Epsilon={self.epsilon}'
+    
+    def load_state_dict(self, dir):
+        self.model.load_state_dict(dir)
+
+    def state_dict(self):
+        return self.model.state_dict()
+    
+    def forward(self, game_info, batch : bool = False):
+        # print(game_info.__class__.__name__)
+        history = game_info['history']
+        first_player_indices = game_info['first_player_indices']
+        
+        history = reshape_history(history, first_player_indices) if batch else \
+                  reshape_history_single(history, first_player_indices)  
+        
+        features = self.extract_features(game_info)
+        # Output should be a 52 x 1 vector
+        out = self.model(history=history, features=features)
+        return out

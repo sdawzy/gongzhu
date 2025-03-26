@@ -2,7 +2,7 @@ from card import Card, CardCollection
 from card import PIG, SHEEP, DOUBLER, PIGPEN, BLOOD
 from env import Gongzhu
 from player import Player
-from policy import Policy, RandomPolicy, GreedyPolicy, DMC
+from policy import Policy, RandomPolicy, GreedyPolicy, DMC, MFE
 from typing import List, Tuple, Dict
 
 import threading
@@ -18,7 +18,6 @@ from multiprocessing import SimpleQueue
 from .file_writer import FileWriter
 from .utils import sampler, Flag, create_buffers, create_optimizer, get_batch, log
 import os
-from policy import DMC
 
 def compute_loss(logits, targets) -> torch.Tensor:
     loss = ((logits.squeeze(0) - targets)**2).mean()
@@ -63,7 +62,7 @@ def learn_old():
 #         return stats
     pass
 
-def learn(learner_model : DMC,
+def learn(learner_model : DMC | MFE,
           samples : List,
           optimizer : torch.optim.Optimizer,
           flags : Flag,
@@ -134,7 +133,7 @@ def train(flags : Flag):
     # actor_models : Dict[str, List[Policy]] = default_actor_models
 
     num_old_versions : int = 0
-    old_versions : List[DMC] = []
+    old_versions : List[MFE] = []
 
     def init_buffers():
     # Initialize buffers
@@ -154,8 +153,8 @@ def train(flags : Flag):
         pass
 
     # Learner model for training
-    learner_model = DMC(device=flags.training_device)
-
+    # learner_model = DMC(device=flags.training_device)
+    learner_model = MFE(device=flags.training_device)
     # Create optimizers
     optimizer = create_optimizer(flags, learner_model)
 
@@ -197,7 +196,7 @@ def train(flags : Flag):
         num_old_versions = checkpoint_states["num_old_versions"]
         old_version_states = checkpoint_states["old_versions"]
         # actor_models[device] = []
-        old_versions = [DMC() for _ in range(num_old_versions)]
+        old_versions = [MFE() for _ in range(num_old_versions)]
         old_versions = [old_versions[i].load_state_dict(old_version_states[i]) 
                         for i in range(num_old_versions)]
 

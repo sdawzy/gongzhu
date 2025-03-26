@@ -120,3 +120,27 @@ class GongzhuDMC(nn.Module):
         x = torch.relu(x)
         x = self.dense2(x)
         return x
+
+class GongzhuMFE(nn.Module):
+    def __init__(self, feature_size=700, hidden_size=131, output_size=52):
+        super().__init__()
+        self.gru = nn.GRU(input_size=52 * 4, hidden_size=hidden_size, 
+                            batch_first=True, bidirectional=True)
+        self.dense1 = nn.Linear(hidden_size * 2 + feature_size, 391)
+        self.dense2 = nn.Linear(391, 255)
+        self.dense3 = nn.Linear(255, 179)
+        self.dense4 = nn.Linear(179, output_size)
+    
+    def forward(self, history: torch.Tensor, features: torch.Tensor):
+        gru_out, h_n = self.gru(history.transpose(0, -2))
+        gru_out = gru_out[-1,:]
+        x = torch.cat([gru_out, features], dim=-1)
+        x = self.dense1(x)
+        x = torch.relu(x)
+        x = self.dense2(x)
+        x = torch.relu(x)
+        x = self.dense3(x)
+        x = torch.relu(x)
+        x = self.dense4(x)
+        return x
+    
