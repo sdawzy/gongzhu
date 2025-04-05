@@ -3,7 +3,7 @@ from card import Card, CardCollection
 from card import PIG, SHEEP, DOUBLER, PIGPEN, BLOOD
 from env import Gongzhu
 from player import Player
-from policy import Policy, RandomPolicy, GreedyPolicy, DMC
+from policy import Policy, RandomPolicy, GreedyPolicy, DMC, MFE
 from typing import List, Tuple, Dict
 
 import threading
@@ -75,14 +75,18 @@ def calculate_player_statistics(players : List[Player]):
     std_dev = np.std(player_ratings)
     return player_ratings, mean_rating, std_dev
 
-def play(players : List[Player], num_simulations : int, iteration, ratings, lock):
+def play(players : List[Player], num_simulations : int, iteration, ratings, same_agent, lock):
     global iteration_lock
     local_simulations = 0
     env = Gongzhu()
     while iteration.value < num_simulations:
         # Randomly choose 4 players 
-        players_to_simulate_indices = np.random.choice(range(len(players)), size=4, replace=False)
-        players_to_simulate = [players[i] for i in players_to_simulate_indices]
+        if same_agent:
+            players_to_simulate_indices = np.random.choice(range(len(players)), size=2, replace=False)
+            players_to_simulate = [players[i] for i in players_to_simulate_indices] * 2
+        else:
+            players_to_simulate_indices = np.random.choice(range(len(players)), size=4, replace=False)
+            players_to_simulate = [players[i] for i in players_to_simulate_indices]
         # print(f"Simulation {cnt+1}:")
         # print(f"Players: {players_to_simulate}")
         # Simulate the game
@@ -100,7 +104,8 @@ def play(players : List[Player], num_simulations : int, iteration, ratings, lock
     # print(f"Local simulations: {local_simulations}")
 
 def arena(policies : List[Policy], num_players : int,
-          num_simulations : int, num_processes : int):
+          num_simulations : int, num_processes : int,
+          same_agent : bool = False):
     # Create players
     players_by_policies = [[Player(policy=policy) for _ in range(num_players_per_policy)] 
         for policy in policies]
@@ -116,7 +121,7 @@ def arena(policies : List[Policy], num_players : int,
     for i in range(num_processes):
         actor = ctx.Process(
             target=play,
-            args=(players, num_simulations, iteration, ratings, lock)
+            args=(players, num_simulations, iteration, ratings, same_agent, lock)
         )
         actor_processes.append(actor)
 
@@ -167,33 +172,56 @@ def arena(policies : List[Policy], num_players : int,
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='GongzhuAI arena')
-    parser.add_argument('--num_players', default=20, type=int,
+    parser.add_argument('--num_players', default=50, type=int,
                     help='Number of players per agent to simulate')
-    parser.add_argument('--num_simulations', default=114514, type=int,
+    parser.add_argument('--num_simulations', default=100000, type=int,
                         help='Number of simulations')    
-    parser.add_argument('--num_processes', default=6, type=int,
+    parser.add_argument('--num_processes', default=4, type=int,
                         help='Number of processes to simulate') 
+    parser.add_argument('--same_agent', action='store_true', default=True,
+                    help='Force teammates to have the same agent')
     args = parser.parse_args()
 
     # Hyperparameters
     num_players_per_policy = args.num_players
     num_simulations = args.num_simulations
     num_processes = args.num_processes
+    same_agent = args.same_agent
+    print(f"num_players_per_policy={num_players_per_policy}")
+    print(f"num_simulations={num_simulations}")
+    print(f"num_processes={num_processes}")
+    print(f"same_agent={same_agent}")
 
     checkpoint_state = torch.load(
-        "gongzhuai_checkpoints/gongzhuai/weights_1e6.ckpt"
+        "gongzhuai_checkpoints/models/dmc/weights_1e6_2.ckpt"
     )
     random_policy = RandomPolicy(label="Random")
     greedy_policy = GreedyPolicy(label="Greedy")
-    dmc_0 = DMC(label="DMC_0")
+    # dmc_0 = DMC(label="DMC_0")
     dmc_1e6 = DMC(label="DMC_1e6")
     dmc_1e6.load_state_dict(checkpoint_state)
 
+    # checkpoint_state = torch.load(
+    #     "gongzhuai_checkpoints/models/mfe/weights_15e5.ckpt"
+    # )
+    num_mfe = 4
+    mfes_15e5 = []
+    for i in range(num_mfe):
+        mfes_15e5.append(MFE(label=f"MFE_15e5_{i+1}"))
+        checkpoint_state = torch.load(
+            f"gongzhuai_checkpoints/models/mfe/weights_15e5_{i+1}.ckpt"
+        )
+        mfes_15e5[-1].load_state_dict(checkpoint_state)
+
     # Run the arena simulations
-    arena(policies=[random_policy, greedy_policy, dmc_1e6],
+    arena(
+        # policies=[random_policy, greedy_policy, dmc_1e6, mfe_15e5],
+        policies=[random_policy, greedy_policy, dmc_1e6,
+            *mfes_15e5],
         num_players=num_players_per_policy,
         num_processes=num_processes,
-        num_simulations=num_simulations)
+        num_simulations=num_simulations,
+        same_agent=same_agent)
     # # Create players
     # random_players = [Player(policy=RandomPolicy()) for _ in range(num_players_per_policy)]
     # greedy_players = [Player(policy=GreedyPolicy(epsilon=0)) for _ in range(num_players_per_policy)]

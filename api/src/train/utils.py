@@ -132,6 +132,7 @@ def sampler(n : int, models : List[Policy], agent_policy: Policy):
         "final_reward" : [],
         "terminated" : [],
         "legal_moves" : [],
+        "actions": [],
         "info" : []
     }
     for i in range(n):
@@ -162,7 +163,7 @@ def sampler(n : int, models : List[Policy], agent_policy: Policy):
 
         for record in records:
             buffers["state"].append(record["state"])
-            buffers["action"].append(record["action"])
+            buffers["actions"].append(record["action"])
             buffers["reward"].append(record["reward"])
             buffers["final_reward"].append(final_reward)
             buffers["terminated"].append(record["terminated"])

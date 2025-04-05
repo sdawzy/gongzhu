@@ -13,17 +13,28 @@ from policy.dmc import reshape_history, reshape_history_single
 import torch.nn.utils.rnn as rnn_utils
 import torch
 
+def state_transformation(states):
+    new_states = {
+        'history' : [state['history'] for state in states],
+        'first_player_indices' : [state['first_player_indices'] for state in states],
+        'agent_info' : [state['agent_info'] for state in states],
+        'players_info' : [[state['players_info'][i] for state in states] for i in range(3)],
+        'scores' : [state['scores'] for state in states]
+    }
+    return new_states
+
 class ManualFeatureExtractor(Policy):
 
     def __init__(self, label : str = "MFE",
                 epsilon: float = 0.05,
-                n_features: int = 631,
-                device: str = "cpu"):
+                n_features: int = 600,
+                device: str = "cpu",
+                temperature: float = 1):
         super().__init__(label=label, epsilon=epsilon)
         # Number of extracted features
         self.device = device
         self.n_features = n_features
-        self.model = GongzhuMFE(n_features=self.n_features)
+        self.model = GongzhuMFE(feature_size=self.n_features)
 
     def extract_features(self, game_info : dict):
         # Extract relevant features from game_info
@@ -79,9 +90,9 @@ class ManualFeatureExtractor(Policy):
             first_player_index = first_player_indices[index // 4]
             this_player_index = (first_player_index + index) % 4
             if index % 4 == 0:
-                current_suit = card.suit()
+                current_suit = card.suit
                 features[B + 16 + this_player_index * 4 + (card.value // 4)] = 1
-            elif card.suit() != current_suit:
+            elif card.suit != current_suit:
                 features[B + this_player_index * 4 + (card.value // 4)] = 1
         for j in range(4):
             if features[524 + j] >= 13:
@@ -107,7 +118,7 @@ class ManualFeatureExtractor(Policy):
             features[B + 1] = 1        
         if agent_hand.intersect(DOUBLERCATCHER) is not None:
             features[B + 2] = 1      
-        return features
+        return torch.from_numpy(features)
 
     def action_value_estimate(self, 
         legal_moves: CardCollection,
@@ -124,11 +135,16 @@ class ManualFeatureExtractor(Policy):
         game_info: dict = None,
         epsilon_greedy: bool = True,
         return_value: bool = False,
-        batch : bool = False) -> Card:
+        batch : bool = False,
+        return_probs : bool = False) -> Card:
 
         out = self.forward(game_info, batch=batch)
-
+        # print(out)
         # In return value mode, we can directly return a vector
+        if return_probs:
+            
+            pass
+
         if return_value:
             return torch.amax(torch.from_numpy(np.array(legal_moves)) * out)
             
@@ -144,6 +160,7 @@ class ManualFeatureExtractor(Policy):
         out = torch.softmax(out, dim=0)
         # Filter out legal moves
         out = torch.from_numpy(legal_moves) * out
+        # print(out)
         # Choose the best move
         action = torch.argmax(out)
 
@@ -171,13 +188,16 @@ class ManualFeatureExtractor(Policy):
     
     def forward(self, game_info, batch : bool = False):
         # print(game_info.__class__.__name__)
-        history = game_info['history']
-        first_player_indices = game_info['first_player_indices']
+        states = state_transformation(game_info) if batch else game_info
+        history = states['history']
+        first_player_indices = states['first_player_indices']
         
         history = reshape_history(history, first_player_indices) if batch else \
                   reshape_history_single(history, first_player_indices)  
         
-        features = self.extract_features(game_info)
+        features = self.extract_features(game_info) if not batch else \
+            torch.stack([self.extract_features(info) for info in game_info])
+
         # Output should be a 52 x 1 vector
         out = self.model(history=history, features=features)
         return out

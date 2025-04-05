@@ -12,19 +12,24 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "src"
 from env import Gongzhu
 from card import Card
 from declaration import Declaration
-from policy import RandomPolicy, GreedyPolicy, Policy, DMC
+from policy import RandomPolicy, GreedyPolicy, Policy, DMC, MFE
 from player import Player
 
 app = Flask(__name__)
 CORS(app)
 
 DB_DIR = "data/record.db"
-CHECKPOINT_DIR = "src/gongzhuai_checkpoints/gongzhuai/weights_1e6_2.ckpt"
+# CHECKPOINT_DIR = "src/gongzhuai_checkpoints/gongzhuai/weights_1e6_2.ckpt"
+CHECKPOINT_DIR_MFE = "src/gongzhuai_checkpoints/models/mfe/weights_15e5_4.ckpt"
+checkpoint_state = torch.load(CHECKPOINT_DIR_MFE)
+mfe_policy = MFE()
+mfe_policy.load_state_dict(checkpoint_state)
 
-checkpoint_state = torch.load(CHECKPOINT_DIR)
-
+CHECKPOINT_DIR_DMC = "src/gongzhuai_checkpoints/models/dmc/weights_1e6_2.ckpt"
+checkpoint_state = torch.load(CHECKPOINT_DIR_DMC)
 dmc_policy = DMC()
 dmc_policy.load_state_dict(checkpoint_state)
+
 random_policy = RandomPolicy()
 greedy_policy = GreedyPolicy()
 # A dictionary to store ongoing games
@@ -39,7 +44,7 @@ ai_policies = {
     "random": random_policy,
     "greedy": greedy_policy,
     "DMC": dmc_policy,
-    # Add more AI policies as needed
+    "MFE": mfe_policy,
 }
 @app.route('/start_game', methods=['POST'])
 def start_game_route():
@@ -212,7 +217,7 @@ def evaluate_route():
     
     card = Card(suit=suit, rank=rank)  # Create a card object
     if game.is_legal_move(game.get_player_by_index(0), card):
-        eval : torch.Tensor = game.action_value_estimate(action=card, policy=dmc_policy)
+        eval : torch.Tensor = game.action_value_estimate(action=card, policy=mfe_policy)
         return jsonify({'evaluation': round(eval.item() * 1000, 3)}), 200
     else:
         return jsonify({'evaluation': -114514}), 200

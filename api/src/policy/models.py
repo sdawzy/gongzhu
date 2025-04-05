@@ -132,9 +132,9 @@ class GongzhuMFE(nn.Module):
         self.dense4 = nn.Linear(179, output_size)
     
     def forward(self, history: torch.Tensor, features: torch.Tensor):
-        gru_out, h_n = self.gru(history.transpose(0, -2))
+        gru_out, h_n = self.gru(history.transpose(0, -2).float())
         gru_out = gru_out[-1,:]
-        x = torch.cat([gru_out, features], dim=-1)
+        x = torch.cat([gru_out, features.float()], dim=-1)
         x = self.dense1(x)
         x = torch.relu(x)
         x = self.dense2(x)

@@ -19,9 +19,87 @@ from .file_writer import FileWriter
 from .utils import sampler, Flag, create_buffers, create_optimizer, get_batch, log
 import os
 
+def compute_ppo_loss(log_probs_old, log_probs_new, advantages, epsilon=0.2):
+    """Computes the PPO surrogate loss with clipping."""
+    ratio = torch.exp(log_probs_new - log_probs_old)  # Importance sampling ratio
+    surr1 = ratio * advantages
+    surr2 = torch.clamp(ratio, 1 - epsilon, 1 + epsilon) * advantages
+    return -torch.min(surr1, surr2).mean()  # Negative for gradient ascent
+
+def compute_value_loss(values, targets):
+    """Computes the value function loss using MSE."""
+    return nn.MSELoss()(values.squeeze(), targets)
+
+def compute_entropy_loss(probs):
+    """Encourages exploration by maximizing entropy."""
+    return -torch.mean(torch.sum(probs * torch.log(probs + 1e-10), dim=-1))
+
+def learn_ppo(learner_model : MFE,
+          samples: dict,
+          optimizer: torch.optim.Optimizer,
+          flags,
+          scale: float = 0.001,
+          entropy_coef: float = 0.01,
+          epsilon: float = 1e-10):
+    """Performs a PPO update step."""
+    
+    # Convert rewards to tensors and scale
+    targets = torch.Tensor(samples["final_reward"]) * scale
+    legal_moves = samples["legal_moves"]
+    states = samples['state']
+    
+    # Forward pass through the model
+    outputs, values_old, log_probs_old = learner_model.decide_action(
+        legal_moves=legal_moves, batch=True, game_info=states, 
+        return_value=True, return_log_probs=True
+    )
+    
+    # Compute advantages
+    advantages = (targets - values_old).detach()  # Simple advantage computation
+    
+    # Compute new log probabilities after update
+    log_probs_new = outputs.log_prob(samples["actions"])
+    
+    # Compute PPO loss components
+    policy_loss = compute_ppo_loss(log_probs_old, log_probs_new, advantages, epsilon=flags.clip_epsilon)
+    value_loss = compute_value_loss(values_old, targets)
+    entropy_loss = compute_entropy_loss(torch.softmax(outputs, dim=-1))  # Encourages exploration
+
+    # Total loss
+    loss = policy_loss + 0.5 * value_loss - entropy_coef * entropy_loss
+    
+    # Gradient update
+    optimizer.zero_grad()
+    loss.backward()
+    nn.utils.clip_grad_norm_(learner_model.parameters(), flags.max_grad_norm)
+    optimizer.step()
+
+    return loss.item(), None
+
 def compute_loss(logits, targets) -> torch.Tensor:
     loss = ((logits.squeeze(0) - targets)**2).mean()
     return loss
+
+def learn_mse(learner_model,
+          samples : List,
+          optimizer : torch.optim.Optimizer,
+          flags : Flag,
+          scale : float = 0.001):
+    targets = torch.Tensor(samples["final_reward"]) * scale
+
+    legal_moves = samples["legal_moves"]
+    states = samples['state']
+
+    outputs = learner_model.decide_action(legal_moves=legal_moves, batch=True,
+                         game_info=states, return_value=True)
+    nn.utils.clip_grad_norm_(learner_model.parameters(), flags.max_grad_norm)
+
+    loss = compute_loss(outputs, targets)
+    optimizer.zero_grad()
+    loss.backward()
+    nn.utils.clip_grad_norm_(learner_model.parameters(), flags.max_grad_norm)
+    optimizer.step()
+    return loss.item(), None
 
 def learn_old():
 # def learn(actor_models : List[DMC],
@@ -62,41 +140,6 @@ def learn_old():
 #         return stats
     pass
 
-def learn(learner_model : DMC | MFE,
-          samples : List,
-          optimizer : torch.optim.Optimizer,
-          flags : Flag,
-          scale : float = 0.001):
-    targets = torch.Tensor(samples["final_reward"]) * scale
-    # actions = torch.flatten(samples["action"], 0, 1)
-    # states = torch.flatten(samples["state"], 0, 1)
-    legal_moves = samples["legal_moves"]
-    states = samples['state']
-    # Change the shape of the states
-    states = {
-        'history' : [state['history'] for state in states],
-        'first_player_indices' : [state['first_player_indices'] for state in states],
-        'agent_info' : [state['agent_info'] for state in states],
-        'players_info' : [[state['players_info'][i] for state in states] for i in range(3)],
-    }
-    # Batch-wise operations?
-    outputs = learner_model.decide_action(legal_moves=legal_moves, batch=True,
-                         game_info=states, return_value=True)
-    nn.utils.clip_grad_norm_(learner_model.parameters(), flags.max_grad_norm)
-    # outputs = torch.zeros(len(states))
-    # for index in range(len(states)):
-    #     outputs[index] = learner_model.decide_action(legal_moves=legal_moves[index],
-    #                      game_info=states[index], return_value=True)
-    # print(outputs.shape)
-    # print(targets.shape)
-
-    loss = compute_loss(outputs, targets)
-    optimizer.zero_grad()
-    loss.backward()
-    nn.utils.clip_grad_norm_(learner_model.parameters(), flags.max_grad_norm)
-    optimizer.step()
-    return loss.item(), None
-
 def train(flags : Flag):
     """
     Right now process in single thread
@@ -133,8 +176,27 @@ def train(flags : Flag):
     # actor_models : Dict[str, List[Policy]] = default_actor_models
 
     num_old_versions : int = 0
-    old_versions : List[MFE] = []
 
+    dmc_old = DMC()
+    mfe1_old = MFE()
+    mfe2_old = MFE()
+    mfe3_old = MFE()
+    dmc_old.load_state_dict(torch.load(
+        "gongzhuai_checkpoints/models/dmc/weights_1e6_2.ckpt"
+    ))
+    mfe1_old.load_state_dict(torch.load(
+        "gongzhuai_checkpoints/models/mfe/weights_15e5_1.ckpt"
+    ))
+    mfe2_old.load_state_dict(torch.load(
+        "gongzhuai_checkpoints/models/mfe/weights_15e5_2.ckpt"
+    ))
+    mfe3_old.load_state_dict(torch.load(
+        "gongzhuai_checkpoints/models/mfe/weights_15e5_3.ckpt"
+    ))
+    default_actor_models.append(dmc_old)
+    default_actor_models.append(mfe1_old)
+    default_actor_models.append(mfe2_old)
+    default_actor_models.append(mfe3_old)
     def init_buffers():
     # Initialize buffers
     # buffers = create_buffers(flags, device_iterator)
@@ -173,9 +235,9 @@ def train(flags : Flag):
         torch.save({
             'model_state_dict': learner_model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
-            'num_old_versions': old_versions,
-            'old_versions': [old_version.state_dict() 
-                    for old_version in old_versions],
+            # 'num_old_versions': old_versions,
+            # 'old_versions': [old_version.state_dict() 
+            #         for old_version in old_versions],
             "stats": stats,
             'flags': vars(flags),
             'frames': frames,
@@ -268,7 +330,7 @@ def train(flags : Flag):
             print(f"Sampler episodes took {timer() - start_time} seconds")
             # Train on the samples
             training_start_time = timer()
-            loss, msr = learn(learner_model=learner_model,
+            loss, msr = learn_mse(learner_model=learner_model,
                 samples=samples,
                 optimizer=optimizer,
                 flags=flags,

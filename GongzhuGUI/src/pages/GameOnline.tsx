@@ -16,7 +16,7 @@ const GameOnline : React.FC = () => {
         <View style={{ padding: 20 }}>
           <Text>AI Algorithm:</Text>
           <View style={{ flexDirection: "row", marginTop: 10, justifyContent: "space-between" }}>
-          {["random", "greedy", "DMC"].map((option) => (
+          {["random", "greedy", "DMC", "MFE"].map((option) => (
             <TouchableOpacity
               key={option}
               onPress={() => setAiPolicy(option)}
