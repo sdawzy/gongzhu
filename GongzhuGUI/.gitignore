@@ -8,6 +8,7 @@ yarn-error.log*
 # Dependency directories
 node_modules/
 .bower_components/
+.expo/
 web-build/
 
 # Build output
