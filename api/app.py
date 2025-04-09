@@ -20,12 +20,12 @@ CORS(app)
 
 DB_DIR = "data/record.db"
 # CHECKPOINT_DIR = "src/gongzhuai_checkpoints/gongzhuai/weights_1e6_2.ckpt"
-CHECKPOINT_DIR_MFE = "src/gongzhuai_checkpoints/models/mfe/weights_15e5_4.ckpt"
+CHECKPOINT_DIR_MFE = "trained_models/mfe/weights_15e5_4.ckpt"
 checkpoint_state = torch.load(CHECKPOINT_DIR_MFE)
 mfe_policy = MFE()
 mfe_policy.load_state_dict(checkpoint_state)
 
-CHECKPOINT_DIR_DMC = "src/gongzhuai_checkpoints/models/dmc/weights_1e6_2.ckpt"
+CHECKPOINT_DIR_DMC = "trained_models/dmc/weights_1e6_2.ckpt"
 checkpoint_state = torch.load(CHECKPOINT_DIR_DMC)
 dmc_policy = DMC()
 dmc_policy.load_state_dict(checkpoint_state)
