@@ -54,7 +54,8 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
     const [actionValue, setActionValue] = useState<number | null>(null);
     // If deployed, use the api from the environment variable
     // const API_URL = Constants.expoConfig?.extra?.apiUrl;
-    const API_URL = "http://0.0.0.0:1926";
+    // const API_URL = "http://0.0.0.0:1926";
+    const API_URL = "https://gongzhuapi.onrender.com";
     const addLog = (message: string) => {
         setLogs(prevLogs => [message, ...prevLogs]);
     }
