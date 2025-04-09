@@ -13,7 +13,7 @@
     "@react-navigation/stack": "^7.1.1",
     "axios": "^1.7.9",
     "dotenv": "^16.4.7",
-    "expo": "^52.0.24",
+    "expo": "^50.0.0",
     "react-dom": "18.3.1",
     "react-native": "0.76.5",
     "react-native-fast-image": "^8.6.3",
@@ -24,7 +24,8 @@
     "react-native-stack": "^1.0.0-alpha11",
     "react-native-svg": "^15.11.1",
     "react-native-vector-icons": "^10.2.0",
-    "react-native-web": "~0.19.13"
+    "react-native-web": "~0.19.13",
+    "@expo/webpack-config": "~19.0.1"
   },
   "devDependencies": {
     "@react-native-community/cli": "^15.1.3",
@@ -33,5 +34,13 @@
     "metro-config": "^0.81.0",
     "metro-react-native-babel-preset": "^0.77.0",
     "typescript": "^5.7.3"
+  },
+  "overrides": {
+    "isomorphic-fetch": {
+      "node-fetch": "^2.6.7"
+    },
+    "fbjs": {
+      "isomorphic-fetch": "^3.0.0"
+    }
   }
 }

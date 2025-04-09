@@ -24,5 +24,8 @@ export default {
             apiUrl: process.env.API_URL || "http://localhost:1926",
             apiKey: process.env.API_KEY || null,
         },
+        web: {
+            "bundler": "webpack"
+        }
     }
 };
