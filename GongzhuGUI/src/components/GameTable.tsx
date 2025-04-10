@@ -1,13 +1,12 @@
 // Game table component
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect} from 'react';
 import { View, Text, Button, StyleSheet, Image, Modal, FlatList, TouchableOpacity  } from 'react-native';
 import Card from '../components/Card';
-import {PIG, SHEEP, BLOOD, DOUBLER, SPECIAL_CARDS} from '../components/specialCards';
+import {PIG, SHEEP, BLOOD, DOUBLER} from '../components/specialCards';
 import Hand from '../components/Hand';
 import Declaration from './Declaration';
 import { CardInterface, PlayerInterface, DeclarationsInterface } from '../types';
 import axios from 'axios';
-import Constants from 'expo-constants';
 
 interface GameTableProps {
   initialPlayers: PlayerInterface[]; 
@@ -54,8 +53,8 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
     const [actionValue, setActionValue] = useState<number | null>(null);
     // If deployed, use the api from the environment variable
     // const API_URL = Constants.expoConfig?.extra?.apiUrl;
-    // const API_URL = "http://0.0.0.0:1926";
-    const API_URL = "https://gongzhuapi.onrender.com";
+    const API_URL = "http://0.0.0.0:8000";
+    // const API_URL = "https://gongzhuapi.onrender.com";
     const addLog = (message: string) => {
         setLogs(prevLogs => [message, ...prevLogs]);
     }

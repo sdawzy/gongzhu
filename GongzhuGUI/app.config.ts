@@ -11,7 +11,8 @@ export default {
         version: "0.1.0",
         orientation: "portrait",
         platforms: ["ios", "android", "web"],
-        icon: "./assets/images/animalface_buta.png",
+        // platforms: ["web"],
+        icon: "./assets/splash.png",
         splash: {
             image: "./assets/splash.png",
             resizeMode: "contain",

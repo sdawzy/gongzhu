@@ -12,3 +12,4 @@ gymnasium==0.28.1
 torch==2.3.0
 uvicorn
 gunicorn
+redis

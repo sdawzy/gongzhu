@@ -1,6 +1,6 @@
 // Hand UI
 import React, {useState} from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import Card from './Card';
 import { CardInterface } from '../types';
 

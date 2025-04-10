@@ -201,3 +201,9 @@ class ManualFeatureExtractor(Policy):
         # Output should be a 52 x 1 vector
         out = self.model(history=history, features=features)
         return out
+    
+    def eval(self) -> None:
+        self.model.eval()
+    
+    def train(self) -> None:
+        self.model.train()

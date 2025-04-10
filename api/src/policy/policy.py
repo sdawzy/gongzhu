@@ -34,6 +34,12 @@ class Policy(ABC):
         game_info: dict = None) -> Declaration:
         raise NotImplementedError("'decide_declarations' not yet implemented.")
     
+    def eval(self) -> None:
+        return
+    
+    def train(self) -> None:
+        return
+
     def action_value_estimate(self,
         legal_moves: CardCollection,
         action: Card,

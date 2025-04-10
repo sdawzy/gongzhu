@@ -2,7 +2,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import Card from '../components/Card'
-import {PIG, SHEEP, BLOOD, BlOODS, DOUBLER, SPECIAL_CARDS} from '../components/specialCards'
+import {PIG, SHEEP, BlOODS, DOUBLER, SPECIAL_CARDS} from '../components/specialCards'
 import Hand from '../components/Hand'
 import { CardInterface } from '../types';
 

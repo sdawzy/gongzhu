@@ -182,6 +182,12 @@ class DMC(Policy):
                 
         return out[action.value]
 
+    def eval(self) -> None:
+        self.model.eval()
+    
+    def train(self) -> None:
+        self.model.train()
+
     def parameters(self):
         return self.model.parameters()
         
