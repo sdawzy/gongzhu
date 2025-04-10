@@ -224,12 +224,13 @@ class Gongzhu(gym.Env):
         # If no cards were played, any card in the hand is legal
         legal_moves = hand if len(played_cards) == 0 else hand.get_cards_by_suit(played_cards[0].get_suit())
         # If no cards of the same suit, then the whole hand is legal
-        legal_moves = legal_moves if not legal_moves.is_empty() else hand
+        is_following_suit = not legal_moves.is_empty()
+        legal_moves = legal_moves if is_following_suit else hand
         # Special rule: if the suit is the same as an openly declared card,
         # and this suit is not yet played, then this openly declared card
         # is illegal
         legal_moves = CardCollection(cards=legal_moves.cards)
-        if len(legal_moves) > 1:
+        if len(legal_moves) > 1 and is_following_suit:
             if self._pig_effect >= 4.0 and PIG in legal_moves and self._suit_rounds['spade'] == 0:
                 legal_moves -= PIG
             if self._sheep_effect >= 4.0 and SHEEP in legal_moves and self._suit_rounds['diamond'] == 0:

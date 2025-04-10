@@ -66,6 +66,7 @@ ai_policies = {
 
 app = Flask(__name__)
 CORS(app)
+
 @app.route('/start_game', methods=['POST'])
 def start_game_route():
     # Get AI policy 
