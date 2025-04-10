@@ -5,8 +5,9 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import sys
 import torch
+from cachetools import TTLCache
 import os
-import redis
+# import redis
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "src")))
 
@@ -38,14 +39,12 @@ dmc_policy = load_policy(DMC, CHECKPOINT_DIR_DMC)
 random_policy = RandomPolicy()
 greedy_policy = GreedyPolicy()
 
-
-
-
 # A dictionary to store ongoing games
 # games = redis.Redis(host='localhost', port=6379, db=0)
 # print(games.ping())  # Should print True
 
-games : dict = {}
+# games : dict = {}
+games = TTLCache(maxsize=2000, ttl=3600)
 # game : GongzhuGame = GongzhuGame(ai_policy=RandomPolicy)  # Initialize your game
 
 def get_game_by_id(game_id):

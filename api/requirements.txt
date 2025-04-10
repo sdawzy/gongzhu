@@ -13,3 +13,4 @@ torch==2.3.0
 uvicorn
 gunicorn
 redis
+cachetools
