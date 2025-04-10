@@ -1,6 +1,6 @@
 {
   "files": {
-    "main.js": "/gongzhu/static/js/main.88a6fd4a.js",
+    "main.js": "/gongzhu/static/js/main.d4280982.js",
     "static/js/681.bd9a8bcb.js": "/gongzhu/static/js/681.bd9a8bcb.js",
     "static/media/card_back.png": "/gongzhu/static/media/card_back.78ff8578be27391e203a.png",
     "static/media/card_heart_13.png": "/gongzhu/static/media/card_heart_13.60e30d898a3db6f5eb5b.png",
@@ -65,11 +65,11 @@
     "favicon-16.png": "/gongzhu/favicon-16.png",
     "manifest.json": "/gongzhu/manifest.json",
     "serve.json": "/gongzhu/serve.json",
-    "main.88a6fd4a.js.map": "/gongzhu/static/js/main.88a6fd4a.js.map",
+    "main.d4280982.js.map": "/gongzhu/static/js/main.d4280982.js.map",
     "681.bd9a8bcb.js.map": "/gongzhu/static/js/681.bd9a8bcb.js.map"
   },
   "entrypoints": [
     "static/js/681.bd9a8bcb.js",
-    "static/js/main.88a6fd4a.js"
+    "static/js/main.d4280982.js"
   ]
 }
