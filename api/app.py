@@ -223,8 +223,4 @@ def evaluate_route():
         return jsonify({'evaluation': -114514}), 200
 
 if __name__ == '__main__':
-    # app.run(debug=True, host='0.0.0.0', port=1926)  # Run the Flask app
     app.run(debug=True, host='0.0.0.0', port=1926)
-
-# option 1: json
-# option 2: sqlite

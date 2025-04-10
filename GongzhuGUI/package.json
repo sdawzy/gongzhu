@@ -1,13 +1,17 @@
 {
-  "name": "GongzhuUI",
-  "version": "0.0.1",
+  "name": "GongzhuGUI",
+  "version": "0.1.0",
+  "homepage": "https://sdawzy.github.io/gongzhu",
   "private": true,
   "scripts": {
     "start": "node node_modules/react-native/local-cli/cli.js start",
-    "web-build": "expo export:web"
+    "predeploy": "expo export:web",
+    "web-build": "expo export:web",
+    "deploy": "gh-pages -d web-build"
   },
   "dependencies": {
     "@expo/metro-runtime": "~4.0.0",
+    "@expo/webpack-config": "~19.0.1",
     "@react-navigation/native": "^7.0.14",
     "@react-navigation/native-stack": "^7.2.0",
     "@react-navigation/stack": "^7.1.1",
@@ -24,17 +28,17 @@
     "react-native-stack": "^1.0.0-alpha11",
     "react-native-svg": "^15.11.1",
     "react-native-vector-icons": "^10.2.0",
-    "react-native-web": "~0.19.13",
-    "@expo/webpack-config": "~19.0.1"
+    "react-native-web": "~0.19.13"
   },
   "devDependencies": {
     "@react-native-community/cli": "^15.1.3",
     "@types/react": "^18.3.18",
     "@types/react-native": "^0.73.0",
+    "gh-pages": "^6.3.0",
     "metro-config": "^0.81.0",
     "metro-react-native-babel-preset": "^0.77.0",
-    "typescript": "^5.7.3",
-    "semver": ">=7.5.2"
+    "semver": ">=7.5.2",
+    "typescript": "^5.7.3"
   },
   "overrides": {
     "isomorphic-fetch": {
