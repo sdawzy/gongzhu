@@ -552,7 +552,10 @@ const GameTable: React.FC<GameTableProps> = ({ initialPlayers, online, ai = "nor
 
     if (!started) {
         return (
-            <Text>Loading Game...</Text>
+            <View style={styles.loadingContainer}>
+                <Text style={styles.loadingText}>Loading Game...</Text>
+                <Text style={styles.subText}>(This may take a minute in first loading)</Text>
+            </View>
         );
     }
     return (
@@ -883,6 +886,23 @@ const styles = StyleSheet.create({
   expandButtonText: {
     color: '#fff',
     fontSize: 14,
+  },
+  loadingContainer: {
+    flex: 1, // Optional: if you want the container to fill the screen
+    justifyContent: 'center', // Center children vertically within the container
+    alignItems: 'center', // Center children horizontally within the container
+    padding: 20, // Add some padding around the content
+  },
+  loadingText: {
+    fontSize: 24, // Increased font size for the main text
+    fontWeight: 'bold', // Optional: make it bold
+    textAlign: 'center', // Ensure text itself is centered if it wraps
+    marginBottom: 10, // Add some space below the main text
+  },
+  subText: {
+    fontSize: 16, // Increased font size for the subtext (smaller than main)
+    color: 'grey', // Optional: change color to make it less prominent
+    textAlign: 'center', // Ensure text itself is centered
   },
 });
   
